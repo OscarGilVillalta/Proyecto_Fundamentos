@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ctime>
 #include <vector>
 using namespace std;
 
@@ -6,58 +7,56 @@ int encuentraTesoro()
 {
     srand(time(NULL));
 
-    int bomba = 1;
-    int azar = 0;
-    int inicioBombaColumna = 0;
-    vector<int> posicion_X = {};
-    vector<int> posicion_Y = {};
+    int retirarse = 0;
+    int puntos = 0; // Almacena los puntos que ganas
+    int perder = -1;
+    int bomba_X = 0;
+    int bomba_Y = 0;
+    vector<vector<int>> posicion_X_Y = {};
 
-    vector<int> bomba_X_Y = {};
-    vector<int> cantindadDeBombas = {};
+    vector<vector<int>> posicion_bomba_X_Y = {}; // Arreglo para almacenar las posiciones de las bombas
+    vector<int> posicion_Bomba_X = {};           // Arreglo para almacenar bombas en "X"
 
-    for (int i = 0; i < 5; i++) // Sistema de crear bombas aleatorias
+    bool repetido;
+    for (int columna_bomba = 1; columna_bomba <= 5; columna_bomba++) // Un bucle de columnas
     {
-        bomba = 1;
-        for (int j = 0; j < 5; j++)
+        bomba_Y = columna_bomba;
+        for (int fila_bomba = 1; fila_bomba <= 5; fila_bomba++) // Un bucle de filas
         {
-            int azar = rand() % 3; // Crea un numero al azar entre 0-2
-            if (bomba < 7)
+            do // Verifica que la coordenada en "X" no se repita
             {
-                if (azar == 0) // Posicion de la bomba + 1
+                repetido = false;
+                bomba_X = (rand() % 10) + 1;
+
+                for (int repetido_X : posicion_Bomba_X) // Se recorre el arreglo y si encuentra una posicion igual se rompe
                 {
-                    bomba += 1;
+                    if (repetido_X == bomba_X)
+                    {
+                        repetido = true;
+                        break;
+                    }
                 }
-                else if (azar == 1) // Posicion de la bomba + 2
-                {
-                    bomba += 2;
-                }
-                else
-                { // Posicion de la bomba + 3
-                    bomba += 3;
-                }
-                bomba_X_Y.push_back(bomba); // Guarda la posicion de la bomba
-            }
-            else
-            {
-                cantindadDeBombas.push_back(j); // Guarda la cantidad de bombas que hay en una fila
-                break;
-            }
+            } while (repetido);
+
+            posicion_Bomba_X.push_back(bomba_X); // Se guardan los elmentos en otro arreglo
         }
 
-        bomba_X_Y.push_back(0); // El "0" indicara el fin de la fila
+        for (int coordenada_X_Bomba : posicion_Bomba_X)
+        {
+            posicion_bomba_X_Y.push_back({coordenada_X_Bomba, columna_bomba}); // Se guardan todas las coordenadas en fomarto (X,Y)
+        }
+        posicion_Bomba_X.clear(); // Se limpia el arreglo para volverlo a usar
     }
 
     bool tesoro = false;
-    bool perder = false;
-    bool mina = false;
-
-    while (true)
+    bool jugando = true;
+    while (jugando)
     {
-
-        if (mina == true)
+        if (retirarse == 3)
         {
-            cout << "Oh no!, usted a perdido porque a pisado una mina" << endl;
-            break;
+            cout << "A conseguido al menos 3 tesoros, por lo que es libre de irse si usted desea! (Solo 1 vez aparecera este mensaje)" << endl
+                 << "Escriba 3 si desea retirarse";
+            cin >> perder;
         }
 
         int abscisa = 0;
@@ -67,28 +66,27 @@ int encuentraTesoro()
         cout << " Ordenada: ";
         cin >> ordenada;
 
-        posicion_X.push_back(abscisa);
-        posicion_Y.push_back(ordenada);
+        if ((abscisa >= 1 && abscisa <= 10) && (ordenada >= 1 && ordenada <= 5)) // Verifica que los valores esten dentro del rango o pierde
+        {
+            posicion_X_Y.push_back({abscisa, ordenada});
+        }
+        else
+        {
+            perder = 0;
+        }
 
-        for (int p = 0; p < posicion_X.size() - 1; p++)
-        { // Detecta si hay una coordenada repetida
-            if (posicion_Y[p] == ordenada && posicion_X[p] == abscisa)
+        for (int p = 0; p < posicion_X_Y.size() - 1; p++) // Detecta si hay una coordenada repetida
+        {
+            if (posicion_X_Y[p][0] == abscisa && posicion_X_Y[p][1] == ordenada)
             {
-                cout << "No se puede ingresar la misma coordenada por lo que usted pierde";
-                perder = true;
+                perder = 1;
             }
         }
 
-        if (perder)
-        { // Se activa si cometio algun error o perdio
-            break;
-        }
-
-        int k = 0;                  // Definir el valor de "K"
-        cout << " ";                // Estetica
-        for (int i = 1; i < 6; i++) // Columna o eje "Y"
+        cout << " ";                                  // Estetica
+        for (int columna = 1; columna < 6; columna++) // Columna o eje "Y"
         {
-            if (i == 1)
+            if (columna == 1)
             {
                 for (int m = 1; m < 11; m++) // Genera un espacio para asignar numero a las columnas
                 {
@@ -96,59 +94,75 @@ int encuentraTesoro()
                 }
                 cout << endl;
             }
-            cout << i << " ";            // Genera un espacio para asignar numero a las filas
-            for (int j = 1; j < 11; j++) // Columna o eje "X"
+            cout << columna << " ";               // Genera un espacio para asignar numero a las filas
+            for (int fila = 1; fila < 11; fila++) // fila o eje "X"
             {
-                for (k; k < cantindadDeBombas.size(); k++) //Recorre la cantidad de bombas que hay en una fila
+                for (int coordenadas_bomba = 0; coordenadas_bomba < posicion_bomba_X_Y.size(); coordenadas_bomba++) // Se recorre el arreglo de las bombas
                 {
-                    if (cantindadDeBombas[k] == 0) //Cuando el arreglo llegue a un valor 0 se considera el final de una fila
+                    if (posicion_bomba_X_Y[coordenadas_bomba][0] == abscisa && posicion_bomba_X_Y[coordenadas_bomba][1] == ordenada) // Si hay una coordenad igual pierde
                     {
-                        break;
-                    }
-                    else if (cantindadDeBombas[k] == abscisa)
-                    {
-                        mina = true;
+                        perder = 2;
                     }
                 }
 
-                for (k = 0; k < posicion_X.size(); k++) // Se verifica la posicion del tesoro
+                if (perder != 2)
                 {
-                    if (posicion_Y[k] == i && posicion_X[k] == j) //Se imrpime el lugar donde se va a poner el tesoro
+                    for (int posicion_Tesoro = 0; posicion_Tesoro < posicion_X_Y.size(); posicion_Tesoro++) // Se verifica la posicion del tesoro
                     {
-                        tesoro = true;
-                        break;
+                        if (posicion_X_Y[posicion_Tesoro][0] == columna && posicion_X_Y[posicion_Tesoro][1] == fila) // Se imrpime el lugar donde se va a poner el tesoro
+                        {
+                            tesoro = true;
+                            break;
+                        }
                     }
                 }
-                if (tesoro && !mina) //Si ambos son verdaderos se activa
+                if (tesoro) // Si ambos son verdaderos se activa
                 {
                     cout << " $ ";
                     tesoro = false;
                 }
-                else if (mina) //Si la mina se activa todas explotan
+                else if (perder == 2)
                 {
                     cout << " ! ";
                 }
-                else //Imprime los lugares no explorados
+                else // Imprime los lugares no explorados
                 {
                     cout << " # ";
                 }
             }
-
-            if (i > 1)
-            {
-                k = cantindadDeBombas[i - 1] + cantindadDeBombas[i]; //Genera el proximo valor que tiene que tener "k" para el proximo ciclo
-            }
-
             cout << endl;
+        }
+        switch (perder) // Menu donde se ponen los diferentes casos donde el jugador puede perder
+        {
+        case 0: // Poner valores fuera de los limites
+            cout << "Usted perdio por no haber ingresado un valor dentro de los limites establecidos";
+            jugando = false;
+            break;
+        case 1: // Repetir coordenadas
+            cout << "Usted perdio por haber repetido coordenadas lo cual no es posible";
+            jugando = false;
+            break;
+        case 2: // Pisar una bomba
+            cout << "Oh no!, usted a pisado una bomba por lo cual a perdido";
+            jugando = false;
+            break;
+        case 3: // Retirarse
+            cout << "Ustes a decidido retirarse, pero se llevar sus tesorosn consigo!";
+            jugando = false;
+            break;
+        default: // Gana puntos
+            puntos += 10;
+            break;
         }
     }
 
-    return 0;
+    return puntos;
 }
 
 int main()
 {
-    encuentraTesoro();
+    int puntos = 0;
+    puntos = encuentraTesoro();
 
     return 0;
 }
