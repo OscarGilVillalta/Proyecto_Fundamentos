@@ -1,168 +1,251 @@
 #include <iostream>
-#include <ctime>
+#include <algorithm>
 #include <vector>
+#include <ctime>
+#include <cstdlib>
 using namespace std;
 
-int encuentraTesoro()
+//Crea selectores de dificultas
+struct Dificulty
+{
+    int maxRows;
+    int maxColumns;
+    int maxRowsBombs;
+    int maxColumnsBombs;
+
+    void reset()
+    { //Regresaa a valores prederteminados
+        maxRows = 0;
+        maxColumns = 0;
+        maxRowsBombs = 0;
+        maxColumnsBombs = 0;
+    }
+} dificulty;
+
+//Verifica que el juego aun se siga ejecutando
+struct GameStatus
+{
+    bool bombExplote = false;
+    bool repeatCoordinate = false;
+    bool outOfRange = false;
+    bool dataTypeInvalid = false;
+
+    void reset()
+    {//Regresaa a valores prederteminados
+        bombExplote = false;
+        repeatCoordinate = false;
+        outOfRange = false;
+        dataTypeInvalid = false;
+    };
+} gameOver;
+
+//Imprime sprites
+struct Sprite{
+    string title = "Title";
+    string bomb = "Bomb";
+    string treasure = "Treasure";
+    string menu = "Menu";
+    string finish = "Game Over";
+};
+
+void dificultad(int dif);
+vector<vector<int>> randomCoordinates(int maxRowsBombs, int maxColumnsBombs);
+bool proveCoordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector<vector<int>> repeat);
+void gameOverMessage();
+string sprite(string typeSprite);
+int board();
+
+int main()
 {
     srand(time(NULL));
+    dificultad(2);
+    return 0;
+}
 
-    int retirarse = 0;
-    int puntos = 0; // Almacena los puntos que ganas
-    int perder = -1;
-    int bomba_X = 0;
-    int bomba_Y = 0;
-    vector<vector<int>> posicion_X_Y = {};
+//Funcion para imprimir "Sprites"
+string sprite(string typeStrite){
+    if(typeStrite == "Title"){
+        cout << " __                                                                      __ \n"
+        "( _ )--------------------------------------------------------------------( _ )\n"
+        " |   |                                                                      |   | \n"
+        " |   |                                                                      |   | \n"
+        " |   |   ######  ######  ##  ##  #####           ######  ##  ##  ######     |   | \n"
+        " |   |   ##        ##    ### ##  ##  ##            ##    ##  ##  ##         |   | \n"
+        " |   |   ####      ##    ## ###  ##  ##            ##    ######  ####       |   | \n"
+        " |   |   ##        ##    ##  ##  ##  ##            ##    ##  ##  ##         |   | \n"
+        " |   |   ##      ######  ##  ##  #####             ##    ##  ##  ######     |   | \n"
+        " |   |   ................................................................   |   | \n"
+        " |   |   ######  #####   ######   ####    ####    ##  ##  #####   ######    |   | \n"
+        " |   |   ##      ##  ##  ##      ##  ##  ##       ##  ##  ##  ##  ##        |   | \n"
+        " |   |   ##      #####   ####    ######   ####    ##  ##  #####   ####      |   | \n"
+        " |   |   ##      ##  ##  ##      ##  ##      ##   ##  ##  ##  ##  ##        |   | \n"
+        " |   |   ##      ##  ##  ######  ##  ##   ####     ####   ##  ##  ######    |   | \n"
+        " |   |   ................................................................   |   | \n"
+        " |   |                                                                      |   | \n"
+        " |_|                                                                      |_| \n"
+        "(__)--------------------------------------------------------------------(__)";
+    }
+}
 
-    vector<vector<int>> posicion_bomba_X_Y = {}; // Arreglo para almacenar las posiciones de las bombas
-    vector<int> posicion_Bomba_X = {};           // Arreglo para almacenar bombas en "X"
-
-    bool repetido;
-    for (int columna_bomba = 1; columna_bomba <= 5; columna_bomba++) // Un bucle de columnas
+//Selecto de dificultado
+void dificultad(int dif)
+{
+    switch (dif)
     {
-        bomba_Y = columna_bomba;
-        for (int fila_bomba = 1; fila_bomba <= 5; fila_bomba++) // Un bucle de filas
-        {
-            do // Verifica que la coordenada en "X" no se repita
-            {
-                repetido = false;
-                bomba_X = (rand() % 10) + 1;
-
-                for (int repetido_X : posicion_Bomba_X) // Se recorre el arreglo y si encuentra una posicion igual se rompe
-                {
-                    if (repetido_X == bomba_X)
-                    {
-                        repetido = true;
-                        break;
-                    }
-                }
-            } while (repetido);
-
-            posicion_Bomba_X.push_back(bomba_X); // Se guardan los elmentos en otro arreglo
-        }
-
-        for (int coordenada_X_Bomba : posicion_Bomba_X)
-        {
-            posicion_bomba_X_Y.push_back({coordenada_X_Bomba, columna_bomba}); // Se guardan todas las coordenadas en fomarto (X,Y)
-        }
-        posicion_Bomba_X.clear(); // Se limpia el arreglo para volverlo a usar
+    case 1://Facil
+        dificulty.maxRows = 10;
+        dificulty.maxColumns = 10;
+        dificulty.maxRowsBombs = 3;
+        dificulty.maxColumnsBombs = 10;
+        break;
+    case 2://Medio
+        dificulty.maxRows = 20;
+        dificulty.maxColumns = 20;
+        dificulty.maxRowsBombs = 10;
+        dificulty.maxColumnsBombs = 20;
+        break;
+    case 3://Complicado
+        dificulty.maxRows = 30;
+        dificulty.maxColumns = 30;
+        dificulty.maxRowsBombs = 16;
+        dificulty.maxColumnsBombs = 30;
+        break;
+    default://Aqui tendria que ir el multijugador creo 
+        break;
     }
 
-    bool tesoro = false;
-    bool jugando = true;
-    while (jugando)
+    board();
+}
+
+//Gener coordenadas aleatorias
+vector<vector<int>> randomCoordinates(int maxRowsBombs, int maxColumnsBombs)
+{
+    vector<vector<int>> bombXY = {}; //Almacena la posicion de las bombas
+    vector<vector<int>>::iterator repeat; //Un iterador para detectar repeticiones
+    int bombX = 0, bombY = 0, row = 1, column = 1;
+
+    for (column; column <= maxColumnsBombs; column++)
     {
-        if (retirarse == 3)
+        vector<int> coordinate;
+        bombY = column;
+        row = 0;
+        do
         {
-            cout << "A conseguido al menos 3 tesoros, por lo que es libre de irse si usted desea! (Solo 1 vez aparecera este mensaje)" << endl
-                 << "Escriba 3 si desea retirarse";
-            cin >> perder;
-        }
-
-        int abscisa = 0;
-        int ordenada = 0;
-        cout << "Ingrese una posicion de una fila (Eje X) y otra de una columna (Eje Y) \n Abscisa: ";
-        cin >> abscisa;
-        cout << " Ordenada: ";
-        cin >> ordenada;
-
-        if ((abscisa >= 1 && abscisa <= 10) && (ordenada >= 1 && ordenada <= 5)) // Verifica que los valores esten dentro del rango o pierde
-        {
-            posicion_X_Y.push_back({abscisa, ordenada});
-        }
-        else
-        {
-            perder = 0;
-        }
-
-        for (int p = 0; p < posicion_X_Y.size() - 1; p++) // Detecta si hay una coordenada repetida
-        {
-            if (posicion_X_Y[p][0] == abscisa && posicion_X_Y[p][1] == ordenada)
+            bombX = rand() % maxRowsBombs + 1; 
+            repeat = find(bombXY.begin(), bombXY.end(), coordinate);
+            if (repeat == bombXY.end())
             {
-                perder = 1;
+                bombXY.push_back({bombX, bombY});
+                row++;
             }
+        } while (row < maxRowsBombs);
+    }
+
+    for (int i = 0; i <= 10; i++)
+    {
+        cout << bombXY[i][0] << " " << bombXY[i][1] << "\n";
+    }
+    return bombXY;
+}
+
+bool proveCoordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector<vector<int>> repeat)
+{
+
+    if ((coordinate[0] < 0 || coordinate[0] > dificulty.maxRows) ||
+        (coordinate[1] < 0 || coordinate[1] > dificulty.maxColumns))
+    {
+        gameOver.outOfRange = true;
+        return true;
+    }
+
+    if (find(repeat.begin(), repeat.end(), coordinate) != repeat.end())
+    {
+        gameOver.repeatCoordinate = true;
+        return true;
+    }
+
+    if (find(bombXY.begin(), bombXY.end(), coordinate) != bombXY.end())
+    {
+        gameOver.bombExplote = true;
+        return true;
+    }
+
+    return false;
+}
+
+void gameOverMessage()
+{
+    if (gameOver.bombExplote)
+    {
+        cout << "Usted a pisado una bomba\n";
+    }
+    else if (gameOver.repeatCoordinate)
+    {
+        cout << "Usted a repetido una coordenada lo cual no es valido\n";
+    }
+    else if (gameOver.outOfRange)
+    {
+        cout << "Usted a ingresado una coordenada fuera del rango establecido\n";
+    }
+    else if (gameOver.dataTypeInvalid)
+    {
+        cout << "A ingresado un dato invalido, debe ingresaar un numero entero en el rango establecido\n";
+    }
+}
+
+int board()
+{
+    bool lose = false, bomb;
+    int positionX = 0, positionY = 0;
+    vector<vector<int>> bombXY = randomCoordinates(dificulty.maxRowsBombs, dificulty.maxColumnsBombs);
+    vector<int> coordinate;
+    vector<vector<int>> repeat = {};
+    vector<vector<int>> bombPosition = {};
+
+    while (true)
+    {
+        gameOver.reset();
+
+        cout << "Ingrese sus coordenadas\n"
+             << "Posicion en X: ";
+        cin >> positionX;
+        cout << "Posicion en Y: ";
+        cin >> positionY;
+        coordinate = {positionX, positionY};
+
+        lose = proveCoordinates(coordinate, bombXY, repeat);
+
+        if (lose)
+        {
+            if(gameOver.bombExplote){
+                bombPosition.push_back(coordinate);
+            }
+            gameOverMessage();
+            lose = false;
         }
 
-        cout << " ";                                  // Estetica
-        for (int columna = 1; columna < 6; columna++) // Columna o eje "Y"
+        for (int column = 1; column < dificulty.maxColumns; column++)
         {
-            if (columna == 1)
+            for (int row = 1; row < dificulty.maxRows; row++)
             {
-                for (int m = 1; m < 11; m++) // Genera un espacio para asignar numero a las columnas
-                {
-                    cout << "  " << m;
-                }
-                cout << endl;
-            }
-            cout << columna << " ";               // Genera un espacio para asignar numero a las filas
-            for (int fila = 1; fila < 11; fila++) // fila o eje "X"
-            {
-                for (int coordenadas_bomba = 0; coordenadas_bomba < posicion_bomba_X_Y.size(); coordenadas_bomba++) // Se recorre el arreglo de las bombas
-                {
-                    if (posicion_bomba_X_Y[coordenadas_bomba][0] == abscisa && posicion_bomba_X_Y[coordenadas_bomba][1] == ordenada) // Si hay una coordenad igual pierde
-                    {
-                        perder = 2;
+                for(vector <int> bomba : bombPosition){
+                    if(bomba[0] == row && bomba[1] == column){
+                        bomb = true;
                     }
                 }
 
-                if (perder != 2)
-                {
-                    for (int posicion_Tesoro = 0; posicion_Tesoro < posicion_X_Y.size(); posicion_Tesoro++) // Se verifica la posicion del tesoro
-                    {
-                        if (posicion_X_Y[posicion_Tesoro][0] == columna && posicion_X_Y[posicion_Tesoro][1] == fila) // Se imrpime el lugar donde se va a poner el tesoro
-                        {
-                            tesoro = true;
-                            break;
-                        }
-                    }
-                }
-                if (tesoro) // Si ambos son verdaderos se activa
-                {
-                    cout << " $ ";
-                    tesoro = false;
-                }
-                else if (perder == 2)
-                {
+                if(bomb){
                     cout << " ! ";
-                }
-                else // Imprime los lugares no explorados
-                {
+                    bomb = false;
+                }else{
                     cout << " # ";
                 }
             }
             cout << endl;
         }
-        switch (perder) // Menu donde se ponen los diferentes casos donde el jugador puede perder
-        {
-        case 0: // Poner valores fuera de los limites
-            cout << "Usted perdio por no haber ingresado un valor dentro de los limites establecidos";
-            jugando = false;
-            break;
-        case 1: // Repetir coordenadas
-            cout << "Usted perdio por haber repetido coordenadas lo cual no es posible";
-            jugando = false;
-            break;
-        case 2: // Pisar una bomba
-            cout << "Oh no!, usted a pisado una bomba por lo cual a perdido";
-            jugando = false;
-            break;
-        case 3: // Retirarse
-            cout << "Ustes a decidido retirarse, pero se llevar sus tesorosn consigo!";
-            jugando = false;
-            break;
-        default: // Gana puntos
-            puntos += 10;
-            break;
-        }
+
+        repeat.push_back(coordinate);
     }
-
-    return puntos;
-}
-
-int main()
-{
-    int puntos = 0;
-    puntos = encuentraTesoro();
 
     return 0;
 }
