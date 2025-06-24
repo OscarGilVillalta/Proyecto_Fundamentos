@@ -1,207 +1,172 @@
 #include <iostream>
 #include <ctime>
 #include <vector>
-#include <fstream> // Añadido para guardar archivos
-#include <string>  // Añadido para manejar nombres
+#include <fstream>
+#include <string>
 using namespace std;
 
-// Funcion para guardar partidas
-void guardarPartida(int puntos, const vector<vector<int>>& jugadas, const vector<vector<int>>& bombas) {
-    ofstream archivo("partida_guardada.txt");
-    if (archivo.is_open()) {
-        // Guardar puntos
-        archivo << puntos << endl;
-        
-        // Guardar jugadas realizadas
-        archivo << jugadas.size() << endl;
-        for (const auto& jugada : jugadas) {
-            archivo << jugada[0] << " " << jugada[1] << endl;
+// Función para guardar partida (ahora con nombre personalizado)
+void saveGame(int points, const vector<vector<int>>& player_moves, const vector<vector<int>>& bomb_positions) {
+    string gameName;
+    cout << "\nIngresa un nombre para guardar la partida (ej: 'Partida1'): ";
+    cin >> gameName;
+
+    ofstream file(gameName + ".txt");
+    if (file.is_open()) {
+        // Guardar metadatos
+        file << "Nombre: " << gameName << endl;
+        file << "Puntos: " << points << endl;
+
+        // Guardar jugadas (posiciones seguras)
+        file << "\nJugadas seguras:\n";
+        for (const auto& move : player_moves) {
+            file << move[0] << " " << move[1] << endl;
         }
-        
-        // Guardar posiciones de bombas
-        archivo << bombas.size() << endl;
-        for (const auto& bomba : bombas) {
-            archivo << bomba[0] << " " << bomba[1] << endl;
+
+        // Guardar bombas
+        file << "\nBombas:\n";
+        for (const auto& bomb : bomb_positions) {
+            file << bomb[0] << " " << bomb[1] << endl;
         }
-        
-        archivo.close();
-        cout << "Partida guardada correctamente en 'partida_guardada.txt'" << endl;
+
+        file.close();
+        cout << "¡Partida guardada como '" << gameName << ".txt'!\n";
     } else {
-        cout << "Error al guardar la partida" << endl;
+        cout << "Error al guardar.\n";
     }
 }
-int encuentraTesoro() {
+
+int findTreasure() {
     srand(time(NULL));
 
-    int retirarse = 0;
-    int puntos = 0; // Almacena los puntos que ganas
-    int perder = -1;
-    int bomba_X = 0;
-    int bomba_Y = 0;
-    vector<vector<int>> posicion_X_Y = {};
+    int leave_option = 0;
+    int points = 0;
+    int lose_condition = -1;
+    vector<vector<int>> player_moves;
+    vector<vector<int>> bomb_positions;
+    vector<int> temp_bomb_x;
 
-    vector<vector<int>> posicion_bomba_X_Y = {}; // Arreglo para almacenar las posiciones de las bombas
-    vector<int> posicion_Bomba_X = {};           // Arreglo para almacenar bombas en "X"
-
-    bool repetido;
-    for (int columna_bomba = 1; columna_bomba <= 5; columna_bomba++) // Un bucle de columnas
-    {
-        bomba_Y = columna_bomba;
-        for (int fila_bomba = 1; fila_bomba <= 5; fila_bomba++) // Un bucle de filas
-        {
-            do // Verifica que la coordenada en "X" no se repita
-            {
-                repetido = false;
-                bomba_X = (rand() % 10) + 1;
-
-                for (int repetido_X : posicion_Bomba_X) // Se recorre el arreglo y si encuentra una posicion igual se rompe
-                {
-                    if (repetido_X == bomba_X)
-                    {
-                        repetido = true;
+    // Generar bombas aleatorias
+    bool is_duplicate;
+    for (int bomb_y = 1; bomb_y <= 5; bomb_y++) {
+        for (int bomb_x_count = 1; bomb_x_count <= 5; bomb_x_count++) {
+            int bomb_x;
+            do {
+                is_duplicate = false;
+                bomb_x = (rand() % 10) + 1;
+                for (int x : temp_bomb_x) {
+                    if (x == bomb_x) {
+                        is_duplicate = true;
                         break;
                     }
                 }
-            } while (repetido);
-
-            posicion_Bomba_X.push_back(bomba_X); // Se guardan los elmentos en otro arreglo
+            } while (is_duplicate);
+            temp_bomb_x.push_back(bomb_x);
         }
 
-        for (int coordenada_X_Bomba : posicion_Bomba_X)
-        {
-            posicion_bomba_X_Y.push_back({coordenada_X_Bomba, columna_bomba}); // Se guardan todas las coordenadas en fomarto (X,Y)
+        for (int x : temp_bomb_x) {
+            bomb_positions.push_back({x, bomb_y});
         }
-        posicion_Bomba_X.clear(); // Se limpia el arreglo para volverlo a usar
+        temp_bomb_x.clear();
     }
 
-    bool tesoro = false;
-    bool jugando = true;
-    while (jugando)
-    {
-        // Opcion para guardar
-        if (retirarse >= 3) {
-            cout << "\nOpcion extra: Escribe 99 si deseas GUARDAR la partida y salir\n";
+    bool is_playing = true;
+    while (is_playing) {
+        // Opción para guardar después de 3 tesoros
+        if (leave_option >= 3) {
+            cout << "\nOpcion extra: Escribe '99' para GUARDAR y salir\n";
         }
 
-        if (retirarse == 3)
-        {
-            cout << "A conseguido al menos 3 tesoros, por lo que es libre de irse si usted desea! (Solo 1 vez aparecera este mensaje)" << endl
-                 << "Escriba 3 si desea retirarse";
-            cin >> perder;
+        if (leave_option == 3) {
+            cout << "¡Puedes retirarte con tus puntos! (Escribe '3' para salir)\n";
+            cin >> lose_condition;
         }
 
-        int abscisa = 0;
-        int ordenada = 0;
-        cout << "Ingrese una posicion de una fila (Eje X) y otra de una columna (Eje Y) \n Abscisa: ";
-        cin >> abscisa;
-        
-        // Detectar guardado
-        if (abscisa == 99 && retirarse >= 3) {
-            guardarPartida(puntos, posicion_X_Y, posicion_bomba_X_Y);
-            return puntos;
-        }
-        
-        cout << " Ordenada: ";
-        cin >> ordenada;
+        int x, y;
+        cout << "Ingresa coordenadas (X Y): ";
+        cin >> x;
 
-        if ((abscisa >= 1 && abscisa <= 10) && (ordenada >= 1 && ordenada <= 5)) // Verifica que los valores esten dentro del rango o pierde
-        {
-            posicion_X_Y.push_back({abscisa, ordenada});
-        }
-        else
-        {
-            perder = 0;
+        // Guardar y salir si elige 99
+        if (x == 99 && leave_option >= 3) {
+            saveGame(points, player_moves, bomb_positions);
+            return points;
         }
 
-        for (int p = 0; p < posicion_X_Y.size() - 1; p++) // Detecta si hay una coordenada repetida
-        {
-            if (posicion_X_Y[p][0] == abscisa && posicion_X_Y[p][1] == ordenada)
-            {
-                perder = 1;
+        cin >> y;
+
+        // Validar coordenadas
+        if (x < 1 || x > 10 || y < 1 || y > 5) {
+            lose_condition = 0; // Fuera de rango
+        } else {
+            player_moves.push_back({x, y});
+        }
+
+        // Verificar repetición
+        for (size_t i = 0; i < player_moves.size() - 1; i++) {
+            if (player_moves[i][0] == x && player_moves[i][1] == y) {
+                lose_condition = 1; // Jugada repetida
             }
         }
 
-        cout << " ";                                  // Estetica
-        for (int columna = 1; columna < 6; columna++) // Columna o eje "Y"
-        {
-            if (columna == 1)
-            {
-                for (int m = 1; m < 11; m++) // Genera un espacio para asignar numero a las columnas
-                {
-                    cout << "  " << m;
-                }
-                cout << endl;
-            }
-            cout << columna << " ";               // Genera un espacio para asignar numero a las filas
-            for (int fila = 1; fila < 11; fila++) // fila o eje "X"
-            {
-                for (int coordenadas_bomba = 0; coordenadas_bomba < posicion_bomba_X_Y.size(); coordenadas_bomba++) // Se recorre el arreglo de las bombas
-                {
-                    if (posicion_bomba_X_Y[coordenadas_bomba][0] == abscisa && posicion_bomba_X_Y[coordenadas_bomba][1] == ordenada) // Si hay una coordenad igual pierde
-                    {
-                        perder = 2;
+        // Dibujar tablero
+        cout << "  ";
+        for (int header = 1; header <= 10; header++) cout << " " << header;
+        cout << endl;
+
+        for (int row = 1; row <= 5; row++) {
+            cout << row << " ";
+            for (int col = 1; col <= 10; col++) {
+                bool is_bomb = false;
+                for (const auto& bomb : bomb_positions) {
+                    if (bomb[0] == col && bomb[1] == row) {
+                        is_bomb = true;
+                        break;
                     }
                 }
 
-                if (perder != 2)
-                {
-                    for (int posicion_Tesoro = 0; posicion_Tesoro < posicion_X_Y.size(); posicion_Tesoro++) // Se verifica la posicion del tesoro
-                    {
-                        if (posicion_X_Y[posicion_Tesoro][0] == columna && posicion_X_Y[posicion_Tesoro][1] == fila) // Se imrpime el lugar donde se va a poner el tesoro
-                        {
-                            tesoro = true;
+                if (lose_condition == 2 && is_bomb && x == col && y == row) {
+                    cout << " ! "; // Bomba pisada
+                } else {
+                    bool is_move = false;
+                    for (const auto& move : player_moves) {
+                        if (move[0] == col && move[1] == row) {
+                            is_move = true;
                             break;
                         }
                     }
-                }
-                if (tesoro) // Si ambos son verdaderos se activa
-                {
-                    cout << " $ ";
-                    tesoro = false;
-                }
-                else if (perder == 2)
-                {
-                    cout << " ! ";
-                }
-                else // Imprime los lugares no explorados
-                {
-                    cout << " # ";
+                    cout << (is_move ? " $ " : " # "); // Tesoro o casilla vacía
                 }
             }
             cout << endl;
         }
-        switch (perder) // Menu donde se ponen los diferentes casos donde el jugador puede perder
-        {
-        case 0: // Poner valores fuera de los limites
-            cout << "Usted perdio por no haber ingresado un valor dentro de los limites establecidos";
-            jugando = false;
-            break;
-        case 1: // Repetir coordenadas
-            cout << "Usted perdio por haber repetido coordenadas lo cual no es posible";
-            jugando = false;
-            break;
-        case 2: // Pisar una bomba
-            cout << "Oh no!, usted a pisado una bomba por lo cual a perdido";
-            jugando = false;
-            break;
-        case 3: // Retirarse
-            cout << "Ustes a decidido retirarse, pero se llevar sus tesorosn consigo!";
-            jugando = false;
-            break;
-        default: // Gana puntos
-            puntos += 10;
-            retirarse++;
-            break;
-        }
-    }
 
-    return puntos;
+        // Verificar condiciones de fin de juego
+        for (const auto& bomb : bomb_positions) {
+            if (bomb[0] == x && bomb[1] == y) {
+                lose_condition = 2; // Pisó bomba
+                break;
+            }
+        }
+
+        switch (lose_condition) {
+            case 0: cout << "¡Coordenadas inválidas!\n"; break;
+            case 1: cout << "¡Jugada repetida!\n"; break;
+            case 2: cout << "¡Boom! Pisaste una bomba.\n"; break;
+            case 3: cout << "¡Te retiraste con " << points << " puntos!\n"; break;
+            default:
+                points += 10;
+                leave_option++;
+                cout << "¡Tesoro encontrado! Puntos: " << points << endl;
+                continue;
+        }
+        is_playing = false;
+    }
+    return points;
 }
 
-int main()
-{
-    int puntos = 0;
-    puntos = encuentraTesoro();
-
+int main() {
+    cout << "=== BUSCA TESOROS ===" << endl;
+    int points = findTreasure();
+    cout << "Puntos finales: " << points << endl;
     return 0;
 }
