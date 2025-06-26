@@ -12,7 +12,7 @@ struct Dificulty {
 } dificulty;               // Variable global de tipo Dificulty
 
 // Función para cargar la partida
-void cargarPartida(vector<vector<int>>& bombXY, vector<vector<int>>& repeat) {
+void cargarPartida(vector<vector<int>>& bombXY, vector<vector<int>>& repeat, vector<vector<int>>& bombPosition) {
     ifstream archivo("partida.txt");  // Abre el archivo de guardado
     if (!archivo) {                    // Verifica si el archivo no existe
         cout << "No se pudo cargar la partida.\n";  // Mensaje de error
