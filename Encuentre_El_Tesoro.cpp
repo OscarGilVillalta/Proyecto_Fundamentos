@@ -5,24 +5,22 @@
 #include <cstdlib>
 using namespace std;
 
-//Crea selectores de dificultas
-struct Dificulty
+// Crea selectores de dificultas
+struct Difficulty
 {
     int maxRows;
     int maxColumns;
     int maxRowsBombs;
-    int maxColumnsBombs;
 
     void reset()
-    { //Regresaa a valores prederteminados
+    { // Regresaa a valores prederteminados
         maxRows = 0;
         maxColumns = 0;
         maxRowsBombs = 0;
-        maxColumnsBombs = 0;
     }
 } dificulty;
 
-//Verifica que el juego aun se siga ejecutando
+// Verifica que el juego aun se siga ejecutando
 struct GameStatus
 {
     bool bombExplote = false;
@@ -31,7 +29,7 @@ struct GameStatus
     bool dataTypeInvalid = false;
 
     void reset()
-    {//Regresaa a valores prederteminados
+    { // Regresaa a valores prederteminados
         bombExplote = false;
         repeatCoordinate = false;
         outOfRange = false;
@@ -39,8 +37,9 @@ struct GameStatus
     };
 } gameOver;
 
-//Imprime sprites
-struct Sprite{
+// Imprime sprites
+struct Sprite
+{
     string title = "Title";
     string bomb = "Bomb";
     string treasure = "Treasure";
@@ -48,122 +47,131 @@ struct Sprite{
     string finish = "Game Over";
 };
 
-void dificultad(int dif);
-vector<vector<int>> randomCoordinates(int maxRowsBombs, int maxColumnsBombs);
-bool proveCoordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector<vector<int>> repeat);
-void gameOverMessage();
+//Seleccionar dificultad
+void menu_difficulty(int dif);
+//Generar coordenadas aleatorias
+vector<vector<int>> randomCoordinates();
+//Verificar coordenadas
+bool prove_coordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector<vector<int>> repeat);
+//Mensaje de en caso de perder
+void game_over_message();
+//Imprimir sprites
 string sprite(string typeSprite);
+//Mensaje de victoria
+bool victory(int points);
+//Tablero de juego
 int board();
 
 int main()
 {
     srand(time(NULL));
-    dificultad(2);
+    sprite("Title");
+    menu_difficulty(2);
     return 0;
 }
 
-//Funcion para imprimir "Sprites"
-string sprite(string typeStrite){
-    if(typeStrite == "Title"){
-        cout << " __                                                                      __ \n"
-        "( _ )--------------------------------------------------------------------( _ )\n"
-        " |   |                                                                      |   | \n"
-        " |   |                                                                      |   | \n"
-        " |   |   ######  ######  ##  ##  #####           ######  ##  ##  ######     |   | \n"
-        " |   |   ##        ##    ### ##  ##  ##            ##    ##  ##  ##         |   | \n"
-        " |   |   ####      ##    ## ###  ##  ##            ##    ######  ####       |   | \n"
-        " |   |   ##        ##    ##  ##  ##  ##            ##    ##  ##  ##         |   | \n"
-        " |   |   ##      ######  ##  ##  #####             ##    ##  ##  ######     |   | \n"
-        " |   |   ................................................................   |   | \n"
-        " |   |   ######  #####   ######   ####    ####    ##  ##  #####   ######    |   | \n"
-        " |   |   ##      ##  ##  ##      ##  ##  ##       ##  ##  ##  ##  ##        |   | \n"
-        " |   |   ##      #####   ####    ######   ####    ##  ##  #####   ####      |   | \n"
-        " |   |   ##      ##  ##  ##      ##  ##      ##   ##  ##  ##  ##  ##        |   | \n"
-        " |   |   ##      ##  ##  ######  ##  ##   ####     ####   ##  ##  ######    |   | \n"
-        " |   |   ................................................................   |   | \n"
-        " |   |                                                                      |   | \n"
-        " |_|                                                                      |_| \n"
-        "(__)--------------------------------------------------------------------(__)";
+// Funcion para imprimir "Sprites"
+string sprite(string typeStrite)
+{
+    if (typeStrite == "Title") //Titulo del juego
+    {
+        cout << " ___                                                                      ___ \n"
+                "( _ )--------------------------------------------------------------------( _ )\n"
+                " | |                                                                      | | \n"
+                " | |                                                                      | | \n"
+                " | |   ######  ######  ##  ##  #####           ######  ##  ##  ######     | | \n"
+                " | |   ##        ##    ### ##  ##  ##            ##    ##  ##  ##         | | \n"
+                " | |   ####      ##    ## ###  ##  ##            ##    ######  ####       | | \n"
+                " | |   ##        ##    ##  ##  ##  ##            ##    ##  ##  ##         | | \n"
+                " | |   ##      ######  ##  ##  #####             ##    ##  ##  ######     | | \n"
+                " | |   ................................................................   | | \n"
+                " | |   ######  #####   ######   ####    ####    ##  ##  #####   ######    | | \n"
+                " | |   ##      ##  ##  ##      ##  ##  ##       ##  ##  ##  ##  ##        | | \n"
+                " | |   ##      #####   ####    ######   ####    ##  ##  #####   ####      | | \n"
+                " | |   ##      ##  ##  ##      ##  ##      ##   ##  ##  ##  ##  ##        | | \n"
+                " | |   ##      ##  ##  ######  ##  ##   ####     ####   ##  ##  ######    | | \n"
+                " | |   ................................................................   | | \n"
+                " | |                                                                      | | \n"
+                " |_|                                                                      |_| \n"
+                "(___)--------------------------------------------------------------------(___)";
     }
+
+    return "";
 }
 
-//Selecto de dificultado
-void dificultad(int dif)
+// Selecto de menu_difficultyo
+void menu_difficulty(int dif)
 {
     switch (dif)
     {
-    case 1://Facil
+    case 1: // Facil
         dificulty.maxRows = 10;
         dificulty.maxColumns = 10;
         dificulty.maxRowsBombs = 3;
-        dificulty.maxColumnsBombs = 10;
         break;
-    case 2://Medio
+    case 2: // Medio
         dificulty.maxRows = 20;
         dificulty.maxColumns = 20;
         dificulty.maxRowsBombs = 10;
-        dificulty.maxColumnsBombs = 20;
         break;
-    case 3://Complicado
+    case 3: // Complicado
         dificulty.maxRows = 30;
         dificulty.maxColumns = 30;
         dificulty.maxRowsBombs = 16;
-        dificulty.maxColumnsBombs = 30;
         break;
-    default://Aqui tendria que ir el multijugador creo 
+    default: // Aqui tendria que ir el multijugador creo
         break;
     }
 
     board();
 }
 
-//Gener coordenadas aleatorias
-vector<vector<int>> randomCoordinates(int maxRowsBombs, int maxColumnsBombs)
+// Gener coordenadas aleatorias
+vector<vector<int>> randomCoordinates()
 {
-    vector<vector<int>> bombXY = {}; //Almacena la posicion de las bombas
-    vector<vector<int>>::iterator repeat; //Un iterador para detectar repeticiones
-    int bombX = 0, bombY = 0, row = 1, column = 1;
+    vector<vector<int>> bombXY = {}; // Almacena la posicion de las bombas
+    int bombX = 0, bombY = 0, row = 0, column = 1;
 
-    for (column; column <= maxColumnsBombs; column++)
+    // Genera las coordenadas de las bombas
+    for (column; column <= dificulty.maxColumns; column++)
     {
-        vector<int> coordinate;
-        bombY = column;
         row = 0;
+        bombY = column;
         do
         {
-            bombX = rand() % maxRowsBombs + 1; 
-            repeat = find(bombXY.begin(), bombXY.end(), coordinate);
-            if (repeat == bombXY.end())
+            // Genera una coordenada aleatoria
+            bombX = (rand() % dificulty.maxRows) + 1;
+            // Verifica si la coordenada ya existe
+            if (find(bombXY.begin(), bombXY.end(), vector<int>{bombX, bombY}) == bombXY.end())
             {
+                // Agrega la coordenada a la lista de bombas
                 bombXY.push_back({bombX, bombY});
                 row++;
             }
-        } while (row < maxRowsBombs);
-    }
-
-    for (int i = 0; i <= 10; i++)
-    {
-        cout << bombXY[i][0] << " " << bombXY[i][1] << "\n";
+        } while (row <= dificulty.maxRowsBombs); // Verifica si se han generado todas las bombas
     }
     return bombXY;
 }
 
-bool proveCoordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector<vector<int>> repeat)
+// Verifica si la coordenada es valida
+bool prove_coordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector<vector<int>> repeat)
 {
-
-    if ((coordinate[0] < 0 || coordinate[0] > dificulty.maxRows) ||
-        (coordinate[1] < 0 || coordinate[1] > dificulty.maxColumns))
+    // Si la coordenada esta fuera del rango
+    if ((coordinate[0] <= 0 || coordinate[0] > dificulty.maxRows) ||
+        (coordinate[1] <= 0 || coordinate[1] > dificulty.maxColumns))
     {
         gameOver.outOfRange = true;
         return true;
     }
 
+    // Si la coordenada esta repetida
     if (find(repeat.begin(), repeat.end(), coordinate) != repeat.end())
     {
         gameOver.repeatCoordinate = true;
         return true;
     }
 
+    // Si la coordenada es una bomba
     if (find(bombXY.begin(), bombXY.end(), coordinate) != bombXY.end())
     {
         gameOver.bombExplote = true;
@@ -173,39 +181,54 @@ bool proveCoordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector
     return false;
 }
 
-void gameOverMessage()
+void game_over_message()
 {
+    // Si la coordenada es una bomba
     if (gameOver.bombExplote)
     {
         cout << "Usted a pisado una bomba\n";
     }
+    // Si la coordenada es repetida
     else if (gameOver.repeatCoordinate)
     {
         cout << "Usted a repetido una coordenada lo cual no es valido\n";
     }
+    // Si la coordenada esta fuera del rango
     else if (gameOver.outOfRange)
     {
         cout << "Usted a ingresado una coordenada fuera del rango establecido\n";
     }
+    // Si el dato ingresado no es un numero entero
     else if (gameOver.dataTypeInvalid)
     {
         cout << "A ingresado un dato invalido, debe ingresaar un numero entero en el rango establecido\n";
     }
 }
 
+// Mensaje de victoria
+bool victory(int points)
+{
+    cout << "Usted a sobrevivido!\n"
+         << "Puntos: " << points << "\n";
+
+    return true;
+}
+
 int board()
 {
-    bool lose = false, bomb;
-    int positionX = 0, positionY = 0;
-    vector<vector<int>> bombXY = randomCoordinates(dificulty.maxRowsBombs, dificulty.maxColumnsBombs);
+    bool lose = false, bomb = false;
+    int positionX = 0, positionY = 0, points = 0;
+    vector<vector<int>> bombXY = randomCoordinates();
     vector<int> coordinate;
     vector<vector<int>> repeat = {};
     vector<vector<int>> bombPosition = {};
 
     while (true)
     {
+        // Reinicia los valores de gameOver
         gameOver.reset();
 
+        // Solicita las coordenadas al usuario
         cout << "Ingrese sus coordenadas\n"
              << "Posicion en X: ";
         cin >> positionX;
@@ -213,38 +236,66 @@ int board()
         cin >> positionY;
         coordinate = {positionX, positionY};
 
-        lose = proveCoordinates(coordinate, bombXY, repeat);
+        // Verifica si la coordenada es valida
+        lose = prove_coordinates(coordinate, bombXY, repeat);
 
+        // Si la coordenada es invalida
         if (lose)
         {
-            if(gameOver.bombExplote){
+            // Si la coordenada es una bomba
+            if (gameOver.bombExplote)
+            {
                 bombPosition.push_back(coordinate);
             }
-            gameOverMessage();
+            // Muestra el mensaje de game over
+            game_over_message();
             lose = false;
+            // Sale del bucle
+            break;
+        }
+        // Si el usuario ha llegado a 60 puntos
+        else if (points == 60)
+        {
+            // Decidir si retirarse
+            if (true)
+            {
+                victory(points);
+                break;
+            }
         }
 
-        for (int column = 1; column < dificulty.maxColumns; column++)
+        // Imprime el tablero de juego
+        for (int column = 1; column <= dificulty.maxColumns; column++)
         {
-            for (int row = 1; row < dificulty.maxRows; row++)
+            for (int row = 1; row <= dificulty.maxRows; row++)
             {
-                for(vector <int> bomba : bombPosition){
-                    if(bomba[0] == row && bomba[1] == column){
+                // Verifica si la coordenada es una bomba
+                for (vector<int> bomba : bombPosition)
+                {
+                    if (bomba[0] == row && bomba[1] == column)
+                    {
                         bomb = true;
                     }
                 }
 
-                if(bomb){
+                // Si la coordenada es una bomba
+                if (bomb)
+                {
                     cout << " ! ";
                     bomb = false;
-                }else{
+                }
+                // Si la coordenada no es una bomba
+                else
+                {
                     cout << " # ";
                 }
             }
             cout << endl;
         }
 
+        // Agrega la coordenada a la lista de coordenadas repetidas
         repeat.push_back(coordinate);
+        points += 20;
     }
 
     return 0;
