@@ -23,10 +23,10 @@ struct Difficulty
 // Verifica que el juego aun se siga ejecutando
 struct GameStatus
 {
-    bool bombExplote = false;
-    bool repeatCoordinate = false;
-    bool outOfRange = false;
-    bool dataTypeInvalid = false;
+    bool bombExplote;
+    bool repeatCoordinate;
+    bool outOfRange;
+    bool dataTypeInvalid;
 
     void reset()
     { // Regresaa a valores prederteminados
@@ -47,19 +47,19 @@ struct Sprite
     string finish = "Game Over";
 };
 
-//Seleccionar dificultad
+// Seleccionar dificultad
 void menu_difficulty(int dif);
-//Generar coordenadas aleatorias
-vector<vector<int>> randomCoordinates();
-//Verificar coordenadas
-bool prove_coordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector<vector<int>> repeat);
-//Mensaje de en caso de perder
+// Generar coordenadas aleatorias
+vector<vector<int>> random_coordinates();
+// Verificar coordenadas
+bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY, const vector<vector<int>> &repeat);
+// Mensaje de en caso de perder
 void game_over_message();
-//Imprimir sprites
+// Imprimir sprites
 string sprite(string typeSprite);
-//Mensaje de victoria
+// Mensaje de victoria
 bool victory(int points);
-//Tablero de juego
+// Tablero de juego
 int board();
 
 int main()
@@ -73,7 +73,7 @@ int main()
 // Funcion para imprimir "Sprites"
 string sprite(string typeStrite)
 {
-    if (typeStrite == "Title") //Titulo del juego
+    if (typeStrite == "Title") // Titulo del juego
     {
         cout << " ___                                                                      ___ \n"
                 "( _ )--------------------------------------------------------------------( _ )\n"
@@ -127,7 +127,7 @@ void menu_difficulty(int dif)
 }
 
 // Gener coordenadas aleatorias
-vector<vector<int>> randomCoordinates()
+vector<vector<int>> random_coordinates()
 {
     vector<vector<int>> bombXY = {}; // Almacena la posicion de las bombas
     int bombX = 0, bombY = 0, row = 0, column = 1;
@@ -148,13 +148,18 @@ vector<vector<int>> randomCoordinates()
                 bombXY.push_back({bombX, bombY});
                 row++;
             }
-        } while (row <= dificulty.maxRowsBombs); // Verifica si se han generado todas las bombas
+        } while (row < dificulty.maxRowsBombs); // Verifica si se han generado todas las bombas
+    }
+
+    for (int i = 0; i < bombXY.size(); i++)
+    {
+        cout << bombXY[i][0] << " " << bombXY[i][1] << endl;
     }
     return bombXY;
 }
 
 // Verifica si la coordenada es valida
-bool prove_coordinates(vector<int> coordinate, vector<vector<int>> bombXY, vector<vector<int>> repeat)
+bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY, const vector<vector<int>> &repeat)
 {
     // Si la coordenada esta fuera del rango
     if ((coordinate[0] <= 0 || coordinate[0] > dificulty.maxRows) ||
@@ -216,12 +221,14 @@ bool victory(int points)
 
 int board()
 {
-    bool lose = false, bomb = false;
+    int retire = 0;
+    bool lose = false, bomb_coordinate = false, treasure_coordinate = false;
     int positionX = 0, positionY = 0, points = 0;
-    vector<vector<int>> bombXY = randomCoordinates();
-    vector<int> coordinate;
-    vector<vector<int>> repeat = {};
-    vector<vector<int>> bombPosition = {};
+    vector<vector<int>> bombXY = random_coordinates();
+    vector<int> coordinate;                // Coordenadas del usuario
+    vector<vector<int>> treasureXY = {};   // Coordenadas del tesoro encontrado
+    vector<vector<int>> repeat = {};       // Coordenadas repetidas
+    vector<vector<int>> bombPosition = {}; // Coordenadas de las bombas que el usuario ha pisado
 
     while (true)
     {
@@ -254,35 +261,60 @@ int board()
             break;
         }
         // Si el usuario ha llegado a 60 puntos
-        else if (points == 60)
+        else if (points >= 60)
         {
-            // Decidir si retirarse
-            if (true)
+            // Pregunta si desea retirarse
+            cout << "Desea retirarse? (s/n): ";
+            cin >> retire;
+            if (retire == 1)
             {
                 victory(points);
                 break;
             }
         }
 
+        // Agrega la coordenada a la lista de coordenadas repetidas
+        repeat.push_back(coordinate);
+        treasureXY.push_back(coordinate);
+        points += 20;
+
         // Imprime el tablero de juego
-        for (int column = 1; column <= dificulty.maxColumns; column++)
+        for (int row = 1; row <= dificulty.maxRows; row++)
         {
-            for (int row = 1; row <= dificulty.maxRows; row++)
+            for (int column = 1; column <= dificulty.maxColumns; column++)
             {
+                // Reinicia las banderas para cada posición
+                bomb_coordinate = false;
+                treasure_coordinate = false;
+
                 // Verifica si la coordenada es una bomba
-                for (vector<int> bomba : bombPosition)
+                for (vector<int> bomb : bombPosition)
                 {
-                    if (bomba[0] == row && bomba[1] == column)
+                    if (bomb[0] == column && bomb[1] == row)
                     {
-                        bomb = true;
+                        bomb_coordinate = true;
+                        break;
+                    }
+                }
+
+                // Verifica si la coordenada es un tesoro
+                for (vector<int> treasure : treasureXY)
+                {
+                    if (treasure[0] == column && treasure[1] == row)
+                    {
+                        treasure_coordinate = true;
+                        break;
                     }
                 }
 
                 // Si la coordenada es una bomba
-                if (bomb)
+                if (bomb_coordinate)
                 {
                     cout << " ! ";
-                    bomb = false;
+                }
+                else if (treasure_coordinate)
+                {
+                    cout << " $ ";
                 }
                 // Si la coordenada no es una bomba
                 else
@@ -292,10 +324,6 @@ int board()
             }
             cout << endl;
         }
-
-        // Agrega la coordenada a la lista de coordenadas repetidas
-        repeat.push_back(coordinate);
-        points += 20;
     }
 
     return 0;
