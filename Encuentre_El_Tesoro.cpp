@@ -133,27 +133,22 @@ vector<vector<int>> random_coordinates()
     int bombX = 0, bombY = 0, row = 0, column = 1;
 
     // Genera las coordenadas de las bombas
-    for (column; column <= dificulty.maxColumns; column++)
+    for (row; row <= dificulty.maxRows; row++)
     {
-        row = 0;
-        bombY = column;
+        column = 0;
+        bombY = row;
         do
         {
             // Genera una coordenada aleatoria
-            bombX = (rand() % dificulty.maxRows) + 1;
+            bombX = (rand() % dificulty.maxColumns) + 1;
             // Verifica si la coordenada ya existe
             if (find(bombXY.begin(), bombXY.end(), vector<int>{bombX, bombY}) == bombXY.end())
             {
                 // Agrega la coordenada a la lista de bombas
                 bombXY.push_back({bombX, bombY});
-                row++;
+                column++;
             }
-        } while (row < dificulty.maxRowsBombs); // Verifica si se han generado todas las bombas
-    }
-
-    for (int i = 0; i < bombXY.size(); i++)
-    {
-        cout << bombXY[i][0] << " " << bombXY[i][1] << endl;
+        } while (column < dificulty.maxRowsBombs); // Verifica si se han generado todas las bombas
     }
     return bombXY;
 }
