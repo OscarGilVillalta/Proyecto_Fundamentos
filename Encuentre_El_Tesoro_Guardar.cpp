@@ -1,172 +1,368 @@
 #include <iostream>
-#include <ctime>
+#include <algorithm>
 #include <vector>
+#include <ctime>
+#include <cstdlib>
 #include <fstream>
-#include <string>
 using namespace std;
 
-// Función para guardar partida (ahora con nombre personalizado)
-void saveGame(int points, const vector<vector<int>>& player_moves, const vector<vector<int>>& bomb_positions) {
-    string gameName;
-    cout << "\nIngresa un nombre para guardar la partida (ej: 'Partida1'): ";
-    cin >> gameName;
+// Estructura para manejar la dificultad del juego
+struct Difficulty {
+    int maxRows;       // Número máximo de filas
+    int maxColumns;    // Número máximo de columnas
+    int maxBombs;      // Número máximo de bombas
 
-    ofstream file(gameName + ".txt");
-    if (file.is_open()) {
-        // Guardar metadatos
-        file << "Nombre: " << gameName << endl;
-        file << "Puntos: " << points << endl;
+    void reset() {     // Restablece los valores predeterminados
+        maxRows = 0;
+        maxColumns = 0;
+        maxBombs = 0;
+    }
+} difficulty;
 
-        // Guardar jugadas (posiciones seguras)
-        file << "\nJugadas seguras:\n";
-        for (const auto& move : player_moves) {
-            file << move[0] << " " << move[1] << endl;
+// Estructura para manejar información de jugadores (para modo multijugador)
+struct Players {
+    string nombre;     // Nombre del jugador
+    int points;        // Puntos acumulados
+} players[4];
+
+// Estructura para manejar el estado del juego
+struct GameStatus {
+    bool bombExplote;             // Indica si explotó una bomba
+    bool repeatCoordinate;        // Indica si se repitió coordenada
+    bool outOfRange;              // Indica si coordenada está fuera de rango
+    bool dataTypeInvalid;         // Indica si el tipo de dato es inválido
+    bool multiplayer;             // Indica si es modo multijugador
+    vector<vector<int>> bomb_explote;  // Coordenadas de bombas explotadas
+    vector<vector<int>> repeat;        // Coordenadas repetidas
+    vector<vector<int>> treasureXY;    // Coordenadas de tesoros encontrados
+
+    void reset() {     // Restablece el estado del juego
+        bombExplote = false;
+        repeatCoordinate = false;
+        outOfRange = false;
+        dataTypeInvalid = false;
+        multiplayer = false;
+        bomb_explote.clear();
+        repeat.clear();
+        treasureXY.clear();
+    };
+} game_status;
+
+// Prototipos de funciones
+void print_board();
+int game_controls();
+void menu_difficulty(int dif);
+vector<vector<int>> random_coordinates();
+bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY);
+void game_over_message();
+string sprite(string typeSprite);
+bool victory(int points);
+void save_game(const vector<vector<int>>& bombXY);
+void load_game(vector<vector<int>>& bombXY);
+int multiplayer(int &maxPlayers, int &attempt);
+
+int main() {
+    srand(time(NULL));
+    sprite("Title");
+    menu_difficulty(2);
+    return 0;
+}
+
+// Función para mostrar gráficos ASCII del juego
+string sprite(string typeSprite) {
+    if (typeSprite == "Title") {
+        cout << " ___                                                                      ___ \n"
+                "( _ )--------------------------------------------------------------------( _ )\n"
+                " | |                                                                      | | \n"
+                " | |                                                                      | | \n"
+                " | |   ######  ######  ##  ##  #####           ######  ##  ##  ######     | | \n"
+                " | |   ##        ##    ### ##  ##  ##            ##    ##  ##  ##         | | \n"
+                " | |   ####      ##    ## ###  ##  ##            ##    ######  ####       | | \n"
+                " | |   ##        ##    ##  ##  ##  ##            ##    ##  ##  ##         | | \n"
+                " | |   ##      ######  ##  ##  #####             ##    ##  ##  ######     | | \n"
+                " | |   ................................................................   | | \n"
+                " | |   ######  #####   ######   ####    ####    ##  ##  #####   ######    | | \n"
+                " | |   ##      ##  ##  ##      ##  ##  ##       ##  ##  ##  ##  ##        | | \n"
+                " | |   ##      #####   ####    ######   ####    ##  ##  #####   ####      | | \n"
+                " | |   ##      ##  ##  ##      ##  ##      ##   ##  ##  ##  ##  ##        | | \n"
+                " | |   ##      ##  ##  ######  ##  ##   ####     ####   ##  ##  ######    | | \n"
+                " | |   ................................................................   | | \n"
+                " | |                                                                      | | \n"
+                " |_|                                                                      |_| \n"
+                "(___)--------------------------------------------------------------------(___)";
+    }
+    return "";
+}
+
+// Función para configurar la dificultad del juego
+void menu_difficulty(int dif) {
+    switch (dif) {
+        case 1: // Fácil
+            difficulty.maxRows = 10;
+            difficulty.maxColumns = 10;
+            difficulty.maxBombs = 3;
+            break;
+        case 2: // Medio
+            difficulty.maxRows = 20;
+            difficulty.maxColumns = 20;
+            difficulty.maxBombs = 10;
+            break;
+        case 3: // Difícil
+            difficulty.maxRows = 30;
+            difficulty.maxColumns = 30;
+            difficulty.maxBombs = 16;
+            break;
+        default: // Multijugador
+            break;
+    }
+    game_controls();
+}
+
+// Función para generar coordenadas aleatorias de bombas
+vector<vector<int>> random_coordinates() {
+    vector<vector<int>> bombXY;
+    int bombsTotal = difficulty.maxBombs * difficulty.maxColumns;
+    
+    while (bombXY.size() < bombsTotal) {
+        int bombX = rand() % difficulty.maxRows + 1;
+        int bombY = rand() % difficulty.maxColumns + 1;
+        vector<int> candidate = {bombX, bombY};
+        
+        if (find(bombXY.begin(), bombXY.end(), candidate) == bombXY.end()) {
+            bombXY.push_back(candidate);
         }
+    }
+    return bombXY;
+}
 
-        // Guardar bombas
-        file << "\nBombas:\n";
-        for (const auto& bomb : bomb_positions) {
-            file << bomb[0] << " " << bomb[1] << endl;
-        }
+// Función para verificar si las coordenadas son válidas
+bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY) {
+    game_status.repeat.push_back(coordinate);
+    
+    // Verifica si está fuera de rango
+    if ((coordinate[0] <= 0 || coordinate[0] > difficulty.maxRows) ||
+        (coordinate[1] <= 0 || coordinate[1] > difficulty.maxColumns)) {
+        game_status.outOfRange = true;
+        return true;
+    }
+    
+    // Verifica si es coordenada repetida
+    if (find(game_status.repeat.begin(), game_status.repeat.end(), coordinate) != game_status.repeat.end()) {
+        game_status.repeatCoordinate = true;
+        return true;
+    }
+    
+    // Verifica si es una bomba
+    if (find(bombXY.begin(), bombXY.end(), coordinate) != bombXY.end()) {
+        game_status.bomb_explote.push_back(coordinate);
+        game_status.bombExplote = true;
+        return true;
+    }
+    
+    game_status.treasureXY.push_back(coordinate);
+    return false;
+}
 
-        file.close();
-        cout << "¡Partida guardada como '" << gameName << ".txt'!\n";
-    } else {
-        cout << "Error al guardar.\n";
+// Función para mostrar mensaje de fin de juego
+void game_over_message() {
+    if (game_status.bombExplote) {
+        cout << "¡Has pisado una bomba!\n";
+    } else if (game_status.repeatCoordinate) {
+        cout << "¡Coordenada repetida! No es válido.\n";
+    } else if (game_status.outOfRange) {
+        cout << "¡Coordenada fuera del rango establecido!\n";
+    } else if (game_status.dataTypeInvalid) {
+        cout << "Dato inválido. Debe ingresar un número entero dentro del rango.\n";
     }
 }
 
-int findTreasure() {
-    srand(time(NULL));
+// Función para mostrar mensaje de victoria
+bool victory(int points) {
+    cout << "¡Has sobrevivido!\nPuntos: " << points << "\n";
+    return true;
+}
 
-    int leave_option = 0;
-    int points = 0;
-    int lose_condition = -1;
-    vector<vector<int>> player_moves;
-    vector<vector<int>> bomb_positions;
-    vector<int> temp_bomb_x;
-
-    // Generar bombas aleatorias
-    bool is_duplicate;
-    for (int bomb_y = 1; bomb_y <= 5; bomb_y++) {
-        for (int bomb_x_count = 1; bomb_x_count <= 5; bomb_x_count++) {
-            int bomb_x;
-            do {
-                is_duplicate = false;
-                bomb_x = (rand() % 10) + 1;
-                for (int x : temp_bomb_x) {
-                    if (x == bomb_x) {
-                        is_duplicate = true;
-                        break;
-                    }
-                }
-            } while (is_duplicate);
-            temp_bomb_x.push_back(bomb_x);
-        }
-
-        for (int x : temp_bomb_x) {
-            bomb_positions.push_back({x, bomb_y});
-        }
-        temp_bomb_x.clear();
+// Función para guardar el estado del juego
+void save_game(const vector<vector<int>>& bombXY) {
+    ofstream archivo("partida.txt");
+    if (!archivo) {
+        cout << "No se pudo guardar la partida.\n";
+        return;
     }
 
-    bool is_playing = true;
-    while (is_playing) {
-        // Opción para guardar después de 3 tesoros
-        if (leave_option >= 3) {
-            cout << "\nOpcion extra: Escribe '99' para GUARDAR y salir\n";
-        }
+    // Guarda la configuración de dificultad
+    archivo << difficulty.maxRows << " " << difficulty.maxColumns << " " << difficulty.maxBombs << "\n";
 
-        if (leave_option == 3) {
-            cout << "¡Puedes retirarte con tus puntos! (Escribe '3' para salir)\n";
-            cin >> lose_condition;
-        }
+    // Guarda las coordenadas de las bombas
+    archivo << bombXY.size() << "\n";
+    for (const auto& coord : bombXY) {
+        archivo << coord[0] << " " << coord[1] << "\n";
+    }
 
-        int x, y;
-        cout << "Ingresa coordenadas (X Y): ";
-        cin >> x;
+    // Guarda las coordenadas repetidas
+    archivo << game_status.repeat.size() << "\n";
+    for (const auto& coord : game_status.repeat) {
+        archivo << coord[0] << " " << coord[1] << "\n";
+    }
 
-        // Guardar y salir si elige 99
-        if (x == 99 && leave_option >= 3) {
-            saveGame(points, player_moves, bomb_positions);
-            return points;
-        }
+    // Guarda las bombas explotadas
+    archivo << game_status.bomb_explote.size() << "\n";
+    for (const auto& coord : game_status.bomb_explote) {
+        archivo << coord[0] << " " << coord[1] << "\n";
+    }
 
-        cin >> y;
+    // Guarda los tesoros encontrados
+    archivo << game_status.treasureXY.size() << "\n";
+    for (const auto& coord : game_status.treasureXY) {
+        archivo << coord[0] << " " << coord[1] << "\n";
+    }
 
-        // Validar coordenadas
-        if (x < 1 || x > 10 || y < 1 || y > 5) {
-            lose_condition = 0; // Fuera de rango
-        } else {
-            player_moves.push_back({x, y});
-        }
+    archivo.close();
+    cout << "Partida guardada correctamente.\n";
+}
 
-        // Verificar repetición
-        for (size_t i = 0; i < player_moves.size() - 1; i++) {
-            if (player_moves[i][0] == x && player_moves[i][1] == y) {
-                lose_condition = 1; // Jugada repetida
+// Función para cargar una partida guardada
+void load_game(vector<vector<int>>& bombXY) {
+    ifstream archivo("partida.txt");
+    if (!archivo) {
+        cout << "No se pudo cargar la partida.\n";
+        return;
+    }
+
+    // Carga la configuración de dificultad
+    archivo >> difficulty.maxRows >> difficulty.maxColumns >> difficulty.maxBombs;
+
+    int n;
+    vector<int> coord(2);
+
+    // Carga las coordenadas de las bombas
+    archivo >> n;
+    bombXY.clear();
+    for (int i = 0; i < n; i++) {
+        archivo >> coord[0] >> coord[1];
+        bombXY.push_back(coord);
+    }
+
+    // Carga las coordenadas repetidas
+    archivo >> n;
+    game_status.repeat.clear();
+    for (int i = 0; i < n; i++) {
+        archivo >> coord[0] >> coord[1];
+        game_status.repeat.push_back(coord);
+    }
+
+    // Carga las bombas explotadas
+    archivo >> n;
+    game_status.bomb_explote.clear();
+    for (int i = 0; i < n; i++) {
+        archivo >> coord[0] >> coord[1];
+        game_status.bomb_explote.push_back(coord);
+    }
+
+    // Carga los tesoros encontrados
+    archivo >> n;
+    game_status.treasureXY.clear();
+    for (int i = 0; i < n; i++) {
+        archivo >> coord[0] >> coord[1];
+        game_status.treasureXY.push_back(coord);
+    }
+
+    archivo.close();
+    cout << "Partida cargada correctamente.\n";
+}
+
+// Función para imprimir el tablero de juego
+void print_board() {
+    bool bomb_coordinate, treasure_coordinate;
+    int points = 0;
+
+    for (int row = 1; row <= difficulty.maxRows; row++) {
+        for (int column = 1; column <= difficulty.maxColumns; column++) {
+            bomb_coordinate = false;
+            treasure_coordinate = false;
+
+            // Verifica si la posición contiene una bomba explotada
+            for (const auto& bomb : game_status.bomb_explote) {
+                if (bomb[0] == column && bomb[1] == row) {
+                    bomb_coordinate = true;
+                    break;
+                }
+            }
+
+            // Verifica si la posición contiene un tesoro
+            for (const auto& treasure : game_status.treasureXY) {
+                if (treasure[0] == column && treasure[1] == row) {
+                    treasure_coordinate = true;
+                    break;
+                }
+            }
+
+            // Imprime el símbolo correspondiente
+            if (bomb_coordinate) {
+                cout << " ! ";
+            } else if (treasure_coordinate) {
+                cout << " $ ";
+            } else {
+                cout << " # ";
             }
         }
-
-        // Dibujar tablero
-        cout << "  ";
-        for (int header = 1; header <= 10; header++) cout << " " << header;
         cout << endl;
+    }
+    points += 20;
+}
 
-        for (int row = 1; row <= 5; row++) {
-            cout << row << " ";
-            for (int col = 1; col <= 10; col++) {
-                bool is_bomb = false;
-                for (const auto& bomb : bomb_positions) {
-                    if (bomb[0] == col && bomb[1] == row) {
-                        is_bomb = true;
-                        break;
-                    }
-                }
+// Función principal de control del juego
+int game_controls() {
+    int retire = 0;
+    bool lose = false;
+    int positionX = 0, positionY = 0, points = 0;
+    vector<vector<int>> bombXY = random_coordinates();
+    vector<int> coordinate;
 
-                if (lose_condition == 2 && is_bomb && x == col && y == row) {
-                    cout << " ! "; // Bomba pisada
-                } else {
-                    bool is_move = false;
-                    for (const auto& move : player_moves) {
-                        if (move[0] == col && move[1] == row) {
-                            is_move = true;
-                            break;
-                        }
-                    }
-                    cout << (is_move ? " $ " : " # "); // Tesoro o casilla vacía
-                }
-            }
-            cout << endl;
+    while (true) {
+        // Opción para guardar o cargar partida
+        cout << "\nOpciones:\n1. Continuar\n2. Guardar partida\n3. Cargar partida\n4. Salir\n";
+        int opcion;
+        cin >> opcion;
+
+        if (opcion == 2) {
+            save_game(bombXY);
+            continue;
+        } else if (opcion == 3) {
+            load_game(bombXY);
+            print_board();
+            continue;
+        } else if (opcion == 4) {
+            break;
         }
 
-        // Verificar condiciones de fin de juego
-        for (const auto& bomb : bomb_positions) {
-            if (bomb[0] == x && bomb[1] == y) {
-                lose_condition = 2; // Pisó bomba
+        // Solicita coordenadas al jugador
+        cout << "Ingrese sus coordenadas (X Y): ";
+        cin >> positionX >> positionY;
+        coordinate = {positionX, positionY};
+
+        // Verifica las coordenadas
+        lose = prove_coordinates(coordinate, bombXY);
+        if (lose) {
+            game_over_message();
+            break;
+        } else if (points >= 60) {
+            cout << "¿Desea retirarse? (1=Sí, 0=No): ";
+            cin >> retire;
+            if (retire == 1) {
+                victory(points);
                 break;
             }
         }
 
-        switch (lose_condition) {
-            case 0: cout << "¡Coordenadas inválidas!\n"; break;
-            case 1: cout << "¡Jugada repetida!\n"; break;
-            case 2: cout << "¡Boom! Pisaste una bomba.\n"; break;
-            case 3: cout << "¡Te retiraste con " << points << " puntos!\n"; break;
-            default:
-                points += 10;
-                leave_option++;
-                cout << "¡Tesoro encontrado! Puntos: " << points << endl;
-                continue;
-        }
-        is_playing = false;
+        print_board();
     }
-    return points;
+
+    return 0;
 }
 
-int main() {
-    cout << "=== BUSCA TESOROS ===" << endl;
-    int points = findTreasure();
-    cout << "Puntos finales: " << points << endl;
+// Función para modo multijugador (a implementar)
+int multiplayer(int &maxPlayers, int &attempt) {
+    // Implementación pendiente
     return 0;
 }
