@@ -3,80 +3,78 @@
 #include <vector>
 #include <ctime>
 #include <cstdlib>
+#include <fstream>
 using namespace std;
 
-// Crea selectores de dificultas
+// Estructura para manejar la dificultad del juego
 struct Difficulty
 {
-    int maxRows; // Numero de filas
-    int maxColumns; // Numero de columnas
-    int maxBombs; // Numero de bombas
+    int maxRows;    // Número máximo de filas
+    int maxColumns; // Número máximo de columnas
+    int maxBombs;   // Número máximo de bombas
 
     void reset()
-    { // Regresaa a valores prederteminados
+    { // Restablece los valores predeterminados
         maxRows = 0;
         maxColumns = 0;
         maxBombs = 0;
     }
-} dificulty;
+} difficulty;
 
-struct Players
+struct GameData
 {
-    string nombre; // Nombre del jugador
-    int points; // Puntos del jugador
-} players[4];
-
-// Verifica que el juego aun se siga ejecutando
-struct GameStatus
-{
-    bool bombExplote; // Verifica si la coordenada es una bomba
-    bool repeatCoordinate; // Verifica si la coordenada es repetida
-    bool outOfRange; // Verifica si la coordenada esta fuera del rango
-    bool dataTypeInvalid; // Verifica si el dato ingresado no es un numero entero
-    bool multiplayer; // Verifica si el juego es multijugador
-    vector<vector<int>> bomb_explote; // Almacena las coordenadas de las bombas
-    vector<vector<int>> repeat; // Almacena las coordenadas repetidas
-    vector<vector<int>> treasureXY; // Almacena las coordenadas de los tesoros
+    int max_players;
+    bool game_status = true;
+    vector<vector<int>> bomb_explote; // Coordenadas de bombas explotadas
+    vector<vector<int>> repeat;       // Coordenadas repetidas
+    vector<vector<int>> treasureXY;   // Coordenadas de tesoros encontrados
 
     void reset()
-    { // Regresaa a valores prederteminados
+    {
+        bomb_explote.clear();
+        repeat.clear();
+        treasureXY.clear();
+    }
+} game_data;
+
+// Estructura para manejar información de jugadores (para modo multijugador)
+struct Players
+{
+    string name;   // Nombre del jugador
+    int points;    // Puntos acumulados
+    bool is_alive; // Indica si el jugador está vivo
+} players[10];
+
+// Estructura para manejar el estado del juego
+struct ErrorType
+{
+    bool bombExplote;      // Indica si explotó una bomba
+    bool repeatCoordinate; // Indica si se repitió coordenada
+    bool outOfRange;       // Indica si coordenada está fuera de rango
+    bool dataTypeInvalid;  // Indica si el tipo de dato es inválido
+
+    void reset()
+    { // Restablece el estado del juego
         bombExplote = false;
         repeatCoordinate = false;
         outOfRange = false;
         dataTypeInvalid = false;
-        multiplayer = false;
-        bomb_explote.clear();
-        repeat.clear();
-        treasureXY.clear();
     };
-} game_status;
+} error_type;
 
-// Imprime sprites
-struct Sprite
-{
-    string title = "Title";
-    string bomb = "Bomb";
-    string treasure = "Treasure";
-    string menu = "Menu";
-    string finish = "Game Over";
-};
-
-// Imprimir tablero
+// Prototipos de funciones
 void print_board();
-// Control de juego
-int game_controls();
-// Seleccionar dificultad
+int game_menu();
 void menu_difficulty(int dif);
-// Generar coordenadas aleatorias
 vector<vector<int>> random_coordinates();
-// Verificar coordenadas
-bool prove_coordinates(vector<int> &coordinate, const vector<vector<int>> &bombXY);
-// Mensaje de en caso de perder
+bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY);
 void game_over_message();
-// Imprimir sprites
 string sprite(string typeSprite);
-// Mensaje de victoria
 bool victory(int points);
+void save_game(const vector<vector<int>> &bombXY);
+void load_game(vector<vector<int>> &bombXY);
+int game_multiplayer();
+void reset_game_state();
 
 int main()
 {
@@ -86,10 +84,10 @@ int main()
     return 0;
 }
 
-// Funcion para imprimir "Sprites"
-string sprite(string typeStrite)
+// Función para mostrar gráficos ASCII del juego
+string sprite(string typeSprite)
 {
-    if (typeStrite == "Title") // Titulo del juego
+    if (typeSprite == "Title")
     {
         cout << " ___                                                                      ___ \n"
                 "( _ )--------------------------------------------------------------------( _ )\n"
@@ -102,151 +100,256 @@ string sprite(string typeStrite)
                 " | |   ##      ######  ##  ##  #####             ##    ##  ##  ######     | | \n"
                 " | |   ................................................................   | | \n"
                 " | |   ######  #####   ######   ####    ####    ##  ##  #####   ######    | | \n"
-                " | |   ##      ##  ##  ##      ##  ##  ##       ##  ##  ##  ##  ##        | | \n"
-                " | |   ##      #####   ####    ######   ####    ##  ##  #####   ####      | | \n"
-                " | |   ##      ##  ##  ##      ##  ##      ##   ##  ##  ##  ##  ##        | | \n"
-                " | |   ##      ##  ##  ######  ##  ##   ####     ####   ##  ##  ######    | | \n"
+                " | |     ##    ##  ##  ##      ##  ##  ##       ##  ##  ##  ##  ##        | | \n"
+                " | |     ##    #####   ####    ######   ####    ##  ##  #####   ####      | | \n"
+                " | |     ##    ##  ##  ##      ##  ##      ##   ##  ##  ##  ##  ##        | | \n"
+                " | |     ##    ##  ##  ######  ##  ##   ####     ####   ##  ##  ######    | | \n"
                 " | |   ................................................................   | | \n"
                 " | |                                                                      | | \n"
                 " |_|                                                                      |_| \n"
-                "(___)--------------------------------------------------------------------(___)";
+                "(___)--------------------------------------------------------------------(___)\n";
     }
-
     return "";
 }
 
-// Selecto de menu_difficultyo
+// Función para configurar la dificultad del juego
 void menu_difficulty(int dif)
 {
     switch (dif)
     {
-    case 1: // Facil
-        dificulty.maxRows = 10;
-        dificulty.maxColumns = 10;
-        dificulty.maxBombs = 3;
+    case 1: // Fácil
+        difficulty.maxRows = 10;
+        difficulty.maxColumns = 10;
+        difficulty.maxBombs = 30;
         break;
     case 2: // Medio
-        dificulty.maxRows = 20;
-        dificulty.maxColumns = 20;
-        dificulty.maxBombs = 10;
+        difficulty.maxRows = 20;
+        difficulty.maxColumns = 20;
+        difficulty.maxBombs = 80;
         break;
-    case 3: // Complicado
-        dificulty.maxRows = 30;
-        dificulty.maxColumns = 30;
-        dificulty.maxBombs = 16;
+    case 3: // Difícil
+        difficulty.maxRows = 30;
+        difficulty.maxColumns = 30;
+        difficulty.maxBombs = 100;
         break;
-    default: // Aqui tendria que ir el multijugador creo
+    default: // Multijugador
         break;
     }
-
-    board();
+    game_menu();
 }
 
-// Gener coordenadas aleatorias
+// Función para generar coordenadas aleatorias de bombas
 vector<vector<int>> random_coordinates()
 {
-    vector<vector<int>> bombXY = {}; // Almacena la posicion de las bombas
-    int bombX = 0, bombY = 0;
+    vector<vector<int>> bombXY;
+    int bombsTotal = difficulty.maxBombs;
 
-    int bombsTotal = dificulty.maxBombs * dificulty.maxColumns;
     while (bombXY.size() < bombsTotal)
     {
-        int bombX = rand() % dificulty.maxRows + 1;
-        int bombY = rand() % dificulty.maxColumns + 1;
+        int bombX = rand() % difficulty.maxRows + 1;
+        int bombY = rand() % difficulty.maxColumns + 1;
         vector<int> candidate = {bombX, bombY};
+
         if (find(bombXY.begin(), bombXY.end(), candidate) == bombXY.end())
         {
             bombXY.push_back(candidate);
         }
     }
-
     return bombXY;
 }
 
-// Verifica si la coordenada es valida
+// Función para verificar si las coordenadas son válidas
 bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY)
 {
-    game_status.repeat.push_back(coordinate);
-    // Si la coordenada esta fuera del rango
-    if ((coordinate[0] <= 0 || coordinate[0] > dificulty.maxRows) ||
-        (coordinate[1] <= 0 || coordinate[1] > dificulty.maxColumns))
+
+    // Verifica si está fuera de rango
+    if ((coordinate[0] <= 0 || coordinate[0] > difficulty.maxRows) ||
+        (coordinate[1] <= 0 || coordinate[1] > difficulty.maxColumns))
     {
-        game_status.outOfRange = true;
+        error_type.outOfRange = true;
         return true;
     }
 
-    // Si la coordenada esta repetida
-    if (find(game_status.repeat.begin(), game_status.repeat.end(), coordinate) != game_status.repeat.end())
+    // Verifica si es coordenada repetida
+    if (find(game_data.repeat.begin(), game_data.repeat.end(), coordinate) != game_data.repeat.end())
     {
-        game_status.repeatCoordinate = true;
+        error_type.repeatCoordinate = true;
         return true;
     }
 
-    // Si la coordenada es una bomba
+    // Verifica si es una bomba
     if (find(bombXY.begin(), bombXY.end(), coordinate) != bombXY.end())
     {
-        game_status.bomb_explote.push_back(coordinate);
-        game_status.bombExplote = true;
+        game_data.bomb_explote.push_back(coordinate);
+        error_type.bombExplote = true;
         return true;
     }
 
-    game_status.treasureXY.push_back(coordinate);
+    game_data.treasureXY.push_back(coordinate);
     return false;
 }
 
+// Función para mostrar mensaje de fin de juego
 void game_over_message()
 {
-    // Si la coordenada es una bomba
-    if (game_status.bombExplote)
+    if (error_type.bombExplote)
     {
-        cout << "Usted a pisado una bomba\n";
+        cout << "¡Has pisado una bomba!\n";
     }
-    // Si la coordenada es repetida
-    else if (game_status.repeatCoordinate)
+    else if (error_type.repeatCoordinate)
     {
-        cout << "Usted a repetido una coordenada lo cual no es valido\n";
+        cout << "¡Coordenada repetida! No es válido.\n";
     }
-    // Si la coordenada esta fuera del rango
-    else if (game_status.outOfRange)
+    else if (error_type.outOfRange)
     {
-        cout << "Usted a ingresado una coordenada fuera del rango establecido\n";
+        cout << "¡Coordenada fuera del rango establecido!\n";
     }
-    // Si el dato ingresado no es un numero entero
-    else if (game_status.dataTypeInvalid)
+    else if (error_type.dataTypeInvalid)
     {
-        cout << "A ingresado un dato invalido, debe ingresaar un numero entero en el rango establecido\n";
+        cout << "Dato inválido. Debe ingresar un número entero dentro del rango.\n";
     }
 }
 
-// Mensaje de victoria
+// Función para mostrar mensaje de victoria
 bool victory(int points)
 {
-    cout << "Usted a sobrevivido!\n"
-         << "Puntos: " << points << "\n";
-
+    cout << "¡Has sobrevivido!\nPuntos: " << points << "\n";
     return true;
 }
 
-int multiplayer(int &maxPlayers, int &attempt)
+// Función para guardar el estado del juego
+void save_game(const vector<vector<int>> &bombXY)
 {
+    ofstream archivo("partida.txt");
+    if (!archivo)
+    {
+        cout << "No se pudo guardar la partida.\n";
+        return;
+    }
 
-    return 0;
+    // Guarda la configuración de dificultad
+    archivo << difficulty.maxRows << " " << difficulty.maxColumns << " " << difficulty.maxBombs << "\n";
+
+    // Guarda las coordenadas de las bombas
+    archivo << bombXY.size() << "\n";
+    for (const vector<int> &coordinates : bombXY)
+    {
+        archivo << coordinates[0] << " " << coordinates[1] << "\n";
+    }
+
+    // Guarda las coordenadas repetidas
+    archivo << game_data.repeat.size() << "\n";
+    for (const vector<int> &coordinates : game_data.repeat)
+    {
+        archivo << coordinates[0] << " " << coordinates[1] << "\n";
+    }
+
+    // Guarda las bombas explotadas
+    archivo << game_data.bomb_explote.size() << "\n";
+    for (const vector<int> &coordinates : game_data.bomb_explote)
+    {
+        archivo << coordinates[0] << " " << coordinates[1] << "\n";
+    }
+
+    // Guarda los tesoros encontrados
+    archivo << game_data.treasureXY.size() << "\n";
+    for (const vector<int> &coordinates : game_data.treasureXY)
+    {
+        archivo << coordinates[0] << " " << coordinates[1] << "\n";
+    }
+
+    archivo.close();
+    cout << "Partida guardada correctamente.\n";
 }
 
+// Función para cargar una partida guardada
+void load_game(vector<vector<int>> &bombXY)
+{
+    ifstream archivo("partida.txt");
+    if (!archivo)
+    {
+        cout << "No se pudo cargar la partida.\n";
+        return;
+    }
+
+    // Carga la configuración de dificultad
+    archivo >> difficulty.maxRows >> difficulty.maxColumns >> difficulty.maxBombs;
+
+    int n;
+    vector<int> coord(2);
+
+    // Carga las coordenadas de las bombas
+    archivo >> n;
+    bombXY.clear();
+    for (int i = 0; i < n; i++)
+    {
+        archivo >> coord[0] >> coord[1];
+        bombXY.push_back(coord);
+    }
+
+    // Carga las coordenadas repetidas
+    archivo >> n;
+    game_data.repeat.clear();
+    for (int i = 0; i < n; i++)
+    {
+        archivo >> coord[0] >> coord[1];
+        game_data.repeat.push_back(coord);
+    }
+
+    // Carga las bombas explotadas
+    archivo >> n;
+    game_data.bomb_explote.clear();
+    for (int i = 0; i < n; i++)
+    {
+        archivo >> coord[0] >> coord[1];
+        game_data.bomb_explote.push_back(coord);
+    }
+
+    // Carga los tesoros encontrados
+    archivo >> n;
+    game_data.treasureXY.clear();
+    for (int i = 0; i < n; i++)
+    {
+        archivo >> coord[0] >> coord[1];
+        game_data.treasureXY.push_back(coord);
+    }
+
+    archivo.close();
+    cout << "Partida cargada correctamente.\n";
+}
+
+// Función para imprimir el tablero de juego
 void print_board()
 {
-    bool bomb_coordinate = true, treasure_coordinate = true;
-    int points = 0;
-    for (int row = 1; row <= dificulty.maxRows; row++) // Recorre las filas
+    bool bomb_coordinate, treasure_coordinate;
+
+    cout << "\n=== TABLERO DE JUEGO ===\n";
+    // Imprimir números de columnas
+    cout << "   ";
+    for (int col = 1; col <= difficulty.maxColumns; col++)
     {
-        for (int column = 1; column <= dificulty.maxColumns; column++) // Recorre las columnas
+        if (col < 10)
+            cout << " " << col << " ";
+        else
+            cout << col << " ";
+    }
+    cout << endl;
+
+    for (int row = 1; row <= difficulty.maxRows; row++)
+    {
+        // Imprimir número de fila
+        if (row < 10)
+            cout << " " << row << " ";
+        else
+            cout << row << " ";
+
+        for (int column = 1; column <= difficulty.maxColumns; column++)
         {
-            // Reinicia los valores para cada posición
             bomb_coordinate = false;
             treasure_coordinate = false;
 
-            // Verifica si la coordenada es una bomba
-            for (vector<int> bomb : game_status.bomb_explote)
+            // Verifica si la posición contiene una bomba explotada
+            for (const vector<int> &bomb : game_data.bomb_explote)
             {
                 if (bomb[0] == column && bomb[1] == row)
                 {
@@ -255,8 +358,8 @@ void print_board()
                 }
             }
 
-            // Verifica si la coordenada es un tesoro
-            for (vector<int> treasure : game_status.treasureXY)
+            // Verifica si la posición contiene un tesoro
+            for (const vector<int> &treasure : game_data.treasureXY)
             {
                 if (treasure[0] == column && treasure[1] == row)
                 {
@@ -265,7 +368,7 @@ void print_board()
                 }
             }
 
-            // Si la coordenada es una bomba
+            // Imprime el símbolo correspondiente
             if (bomb_coordinate)
             {
                 cout << " ! ";
@@ -274,7 +377,6 @@ void print_board()
             {
                 cout << " $ ";
             }
-            // Si la coordenada no es una bomba
             else
             {
                 cout << " # ";
@@ -282,53 +384,151 @@ void print_board()
         }
         cout << endl;
     }
-    points += 20;
+    cout << "Leyenda: # = Sin explorar, $ = Tesoro, ! = Bomba\n";
 }
 
-int game_controls()
+// Función principal de control del juego
+int game_menu()
 {
-    
-    int retire = 0;
-    bool lose = false, bomb_coordinate = false, treasure_coordinate = false;
-    int positionX = 0, positionY = 0, points = 0;
-    vector<vector<int>> bombXY = random_coordinates(); // Genera las coordenadas de las bombas
-    vector<int> coordinate; // Coordenadas del usuario
+    int opcion;
+    vector<vector<int>> bombXY = random_coordinates();
 
     while (true)
     {
-        // Solicita las coordenadas al usuario
-        cout << "Ingrese sus coordenadas\n"
-             << "Posicion en X: ";
-        cin >> positionX;
-        cout << "Posicion en Y: ";
-        cin >> positionY;
-        coordinate = {positionX, positionY};
+        // Opción para guardar o cargar partida
+        cout << "\nOpciones:\n1. Continuar\n2. Guardar partida\n3. Cargar partida\n4. Salir\n";
+        cin >> opcion;
 
-        // Verifica si la coordenada es valida
-        lose = prove_coordinates(coordinate, bombXY);
-        // Si la coordenada es invalida
-        if (lose)
+        if (opcion == 1)
         {
-            // Muestra el mensaje de game over
-            game_over_message();
-            // Sale del bucle
+            cout << "Con cuantos jugadores desea tener? (1-4) Maximo de jugadores: ";
+            cin >> game_data.max_players;
+            if (game_data.max_players < 1 || game_data.max_players > 4)
+            {
+                cout << "Número de jugadores inválido. Debe ser entre 1 y 4.\n";
+                continue;
+            }
+            game_multiplayer();
+        }
+        else if (opcion == 2)
+        {
+            save_game(bombXY);
+            continue;
+        }
+        else if (opcion == 3)
+        {
+            load_game(bombXY);
+            print_board();
+            continue;
+        }
+        else if (opcion == 4)
+        {
             break;
         }
-        // Si el usuario ha llegado a 60 puntos
-        else if (points >= 60)
-        {
-            // Pregunta si desea retirarse
-            cout << "Desea retirarse? (s/n): ";
-            cin >> retire;
-            if (retire == 1)
-            {
-                victory(points);
-                break;
-            }
-        }
-
-        print_board();
     }
 
     return 0;
+}
+
+// Función para modo multijugador
+int game_multiplayer()
+{
+    bool lose = false;
+    int positionX = 0, positionY = 0, retire = 0;
+    vector<vector<int>> bombXY = random_coordinates();
+    vector<int> coordinate;
+
+    // Inicializar jugadores
+    for (int i = 0; i < game_data.max_players; i++)
+    {
+        cout << "Ingrese el nombre del jugador " << i + 1 << ": ";
+        cin >> players[i].name;
+        players[i].points = 0;
+        players[i].is_alive = true;
+    }
+
+    // Mostrar tablero inicial
+    print_board();
+
+    while (game_data.game_status)
+    {
+        for (int turn = 0; turn < game_data.max_players; ++turn)
+        {
+            if (players[turn].is_alive)
+            {
+
+                cout << "\nTurno de " << players[turn].name << " (Puntos: " << players[turn].points << ")\n";
+                cout << "Ingrese sus coordenadas (X Y): \n";
+                cout << "X: ";
+                cin >> positionX;
+                cout << "Y: ";
+                cin >> positionY;
+
+                coordinate = {positionX, positionY};
+
+                // Verifica las coordenadas
+                lose = prove_coordinates(coordinate, bombXY);
+                game_data.repeat.push_back(coordinate);
+
+                if (lose)
+                {
+                    game_over_message();
+                    if (error_type.bombExplote)
+                    {
+                        players[turn].is_alive = false;
+                        cout << players[turn].name << " ha perdido!\n";
+                    }
+                }
+                else
+                {
+                    players[turn].points += 20;
+                    cout << "¡Tesoro encontrado! +20 puntos\n";
+                }
+
+                print_board();
+
+                if (players[turn].points >= 60 && players[turn].is_alive)
+                {
+                    cout << "¿Desea retirarse? (1=Sí, 0=No): ";
+                    cin >> retire;
+                    if (retire == 1)
+                    {
+                        victory(players[turn].points);
+                        players[turn].is_alive = false;
+                    }
+                }
+            }
+        }
+
+        // Verificar si algún jugador sigue vivo
+        game_data.game_status = false;
+        for (int i = 0; i < game_data.max_players; i++)
+        {
+            if (players[i].is_alive)
+            {
+                game_data.game_status = true;
+                break;
+            }
+        }
+    }
+
+    cout << "\n=== FIN DEL JUEGO ===\n";
+    for (int i = 0; i < game_data.max_players; i++)
+    {
+        cout << players[i].name << ": " << players[i].points << " puntos\n";
+    }
+
+    return 0;
+}
+
+// Función para reiniciar el estado del juego
+void reset_game_state()
+{
+    game_data.reset();
+    error_type.reset();
+    for (int i = 0; i < 4; i++)
+    {
+        players[i].points = 0;
+        players[i].is_alive = false;
+    }
 }
