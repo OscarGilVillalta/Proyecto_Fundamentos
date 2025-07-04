@@ -316,6 +316,8 @@ void load_game(vector<vector<int>> &bombXY)
 
     archivo.close();
     cout << "Partida cargada correctamente.\n";
+
+    game_multiplayer();
 }
 
 // Función para imprimir el tablero de juego
@@ -408,6 +410,16 @@ int game_menu()
                 cout << "Número de jugadores inválido. Debe ser entre 1 y 4.\n";
                 continue;
             }
+            else
+            {
+                for (int i = 0; i < game_data.max_players; i++)
+                {
+                    cout << "Ingrese el nombre del jugador " << i + 1 << ": ";
+                    cin >> players[i].name;
+                    players[i].points = 0;
+                    players[i].is_alive = true;
+                }
+            }
             game_multiplayer();
         }
         else if (opcion == 2)
@@ -437,15 +449,6 @@ int game_multiplayer()
     int positionX = 0, positionY = 0, retire = 0;
     vector<vector<int>> bombXY = random_coordinates();
     vector<int> coordinate;
-
-    // Inicializar jugadores
-    for (int i = 0; i < game_data.max_players; i++)
-    {
-        cout << "Ingrese el nombre del jugador " << i + 1 << ": ";
-        cin >> players[i].name;
-        players[i].points = 0;
-        players[i].is_alive = true;
-    }
 
     // Mostrar tablero inicial
     print_board();
