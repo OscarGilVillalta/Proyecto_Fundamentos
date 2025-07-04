@@ -25,6 +25,7 @@ struct GameData
 {
     int max_players;
     bool game_status = true;
+    vector<vector<int>> bombXY = random_coordinates();
     vector<vector<int>> bomb_explote; // Coordenadas de bombas explotadas
     vector<vector<int>> repeat;       // Coordenadas repetidas
     vector<vector<int>> treasureXY;   // Coordenadas de tesoros encontrados
@@ -393,7 +394,6 @@ void print_board()
 int game_menu()
 {
     int opcion;
-    vector<vector<int>> bombXY = random_coordinates();
 
     while (true)
     {
@@ -424,12 +424,12 @@ int game_menu()
         }
         else if (opcion == 2)
         {
-            save_game(bombXY);
+            save_game(game_data.bombXY);
             continue;
         }
         else if (opcion == 3)
         {
-            load_game(bombXY);
+            load_game(game_data.bombXY);
             print_board();
             continue;
         }
@@ -447,7 +447,6 @@ int game_multiplayer()
 {
     bool lose = false;
     int positionX = 0, positionY = 0, retire = 0;
-    vector<vector<int>> bombXY = random_coordinates();
     vector<int> coordinate;
 
     // Mostrar tablero inicial
@@ -470,7 +469,7 @@ int game_multiplayer()
                 coordinate = {positionX, positionY};
 
                 // Verifica las coordenadas
-                lose = prove_coordinates(coordinate, bombXY);
+                lose = prove_coordinates(coordinate, game_data.bombXY);
                 game_data.repeat.push_back(coordinate);
 
                 if (lose)
