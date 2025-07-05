@@ -79,16 +79,17 @@ bool victory(int points);
 void save_game(const vector<vector<int>> &bombXY);
 void load_game(vector<vector<int>> &bombXY);
 void game_multiplayer(vector<vector<int>> &bombXY);
-void reset_game_state();
+void reset_game_state(vector<vector<int>>& bombXY);
 void pistol_shot(int &turn, bool &lose);
 void shield_protection(int &turn, bool &lose);
 void player_action(int &turn, bool &lose);
+void player_configuration();
 
 int main()
 {
     srand(time(NULL));
     sprite("Title");
-    menu_difficulty(2);
+    game_menu();
     return 0;
 }
 
@@ -149,7 +150,6 @@ void menu_difficulty(int dif)
     default: // Multijugador
         break;
     }
-    game_menu();
 }
 
 // Función para generar coordenadas aleatorias de bombas
@@ -426,10 +426,9 @@ Seleccione una opción: )";
 
         if (opcion == 1)
         {
-            game_data.reset();
-            error_type.reset();
-            bombXY.clear();
-            bombXY = random_coordinates();
+            reset_game_state(bombXY);
+            game_data.max_players = 1;
+
             int dif;
             cout << "\nSelecciona dificultad:\n";
             cout << "1. Fácil (10x10 - 30 bombas)\n";
@@ -437,21 +436,16 @@ Seleccione una opción: )";
             cout << "3. Difícil (30x30 - 100 bombas)\n";
             cout << "Opción: ";
             cin >> dif;
-            menu_difficulty(dif);
 
-            cout << "Nombre del jugador: ";
-            cin >> players[0].name;
-            players[0].points = 0;
-            players[0].is_alive = true;
-            players[0].bullets = difficulty.maxBullets;
-            players[0].shields = difficulty.maxShields;
+            menu_difficulty(dif);
+            bombXY = random_coordinates();
+            player_configuration();
+            game_multiplayer(bombXY);
         }
         else if (opcion == 2)
         {
-            game_data.reset();
-            error_type.reset();
-            bombXY.clear();
-            bombXY = random_coordinates();
+            reset_game_state(bombXY);
+
             int dif;
             cout << "\nSelecciona dificultad para Multijugador:\n";
             cout << "1. Fácil (10x10 - 30 bombas)\n";
@@ -459,7 +453,6 @@ Seleccione una opción: )";
             cout << "3. Difícil (30x30 - 100 bombas)\n";
             cout << "Opción: ";
             cin >> dif;
-            menu_difficulty(dif);
 
             cout << "\n¿Con cuántos jugadores deseas jugar? (1-4): ";
             cin >> game_data.max_players;
@@ -470,16 +463,9 @@ Seleccione una opción: )";
                 continue;
             }
 
-            for (int i = 0; i < game_data.max_players; i++)
-            {
-                cout << "Nombre del jugador " << i + 1 << ": ";
-                cin >> players[i].name;
-                players[i].points = 0;
-                players[i].is_alive = true;
-                players[i].bullets = difficulty.maxBullets;
-                players[i].shields = difficulty.maxShields;
-            }
-
+            menu_difficulty(dif);
+            player_configuration();
+            bombXY = random_coordinates();
             game_multiplayer(bombXY);
         }
         else if (opcion == 3)
@@ -586,11 +572,25 @@ void game_multiplayer(vector<vector<int>> &bombXY)
     }
 }
 
+void player_configuration()
+{
+    for (int i = 0; i < game_data.max_players; i++)
+    {
+        cout << "Nombre del jugador " << i + 1 << ": ";
+        cin >> players[i].name;
+        players[i].points = 0;
+        players[i].is_alive = true;
+        players[i].bullets = difficulty.maxBullets;
+        players[i].shields = difficulty.maxShields;
+    }
+}
+
 // Función para reiniciar el estado del juego
-void reset_game_state()
+void reset_game_state(vector<vector<int>> &bombXY)
 {
     game_data.reset();
     error_type.reset();
+    bombXY.clear();
     for (int i = 0; i < 4; i++)
     {
         players[i].points = 0;
