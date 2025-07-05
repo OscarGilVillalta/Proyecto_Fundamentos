@@ -121,7 +121,7 @@ void player_configuration();
 int main()
 {
     srand(time(NULL));
-    cout<< Sprites.title;
+    cout<< sprites.title;
     game_menu();
     return 0;
 }
@@ -416,7 +416,7 @@ int game_menu()
     while (true)
     {
 
-        cout <<Sprites.menu;
+        cout <<sprites.menu;
         cin >> opcion;
 
         if (opcion == 1)
