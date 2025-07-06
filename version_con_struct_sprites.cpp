@@ -24,7 +24,8 @@ struct Difficulty
     }
 } difficulty;
 
-struct Sprites {
+struct Sprites
+{
     string title = R"(
 
   ___                                                                      ___ 
@@ -206,7 +207,7 @@ bool victory(int points);
 void save_game(const vector<vector<int>> &bombXY);
 void load_game(vector<vector<int>> &bombXY);
 void game_multiplayer(vector<vector<int>> &bombXY);
-void reset_game_state(vector<vector<int>>& bombXY);
+void reset_game_state(vector<vector<int>> &bombXY);
 void pistol_shot(int &turn, bool &lose);
 void shield_protection(int &turn, bool &lose);
 void player_action(int &turn, bool &lose);
@@ -215,7 +216,7 @@ void player_configuration();
 int main()
 {
     srand(time(NULL));
-    cout<< sprites.title;
+    cout << sprites.title;
     game_menu();
     return 0;
 }
@@ -319,7 +320,7 @@ void game_over_message()
     }
     else if (error_type.dataTypeInvalid)
     {
-        cout << "Dato inválido. Debe ingresar un número entero dentro del rango.\n";
+        cout << "Dato invalido. Debe ingresar un numero entero dentro del rango.\n";
     }
 }
 
@@ -358,7 +359,7 @@ void save_game(const vector<vector<int>> &bombXY)
                 string filename = "partida" + to_string(i) + ".txt";
                 cout << i << ". " << filename << "\n";
             }
-            cout << "Seleccione el número de partida a borrar (1-3): ";
+            cout << "Seleccione el numero de partida a borrar (1-3): ";
             int partidaABorrar;
             cin >> partidaABorrar;
 
@@ -370,13 +371,13 @@ void save_game(const vector<vector<int>> &bombXY)
             }
             else
             {
-                cout << "Opción inválida. No se guardó la partida.\n";
+                cout << "Opcion invalida. No se guardó la partida.\n";
                 return;
             }
         }
         else
         {
-            cout << "No se guardó la partida.\n";
+            cout << "No se guardo la partida.\n";
             return;
         }
     }
@@ -440,13 +441,13 @@ void save_game(const vector<vector<int>> &bombXY)
     archivo << game_data.max_players << "\n";
 
     // Guarda datos de cada jugador
-    for (int i = 0; i < game_data.max_players; i++) 
+    for (int i = 0; i < game_data.max_players; i++)
     {
-            archivo << players[i].name << " "
-            << players[i].points << " "
-            << players[i].bullets << " "
-            << players[i].shields << " "
-            << players[i].is_alive << "\n";
+        archivo << players[i].name << " "
+                << players[i].points << " "
+                << players[i].bullets << " "
+                << players[i].shields << " "
+                << players[i].is_alive << "\n";
     }
     archivo.close();
     cout << "Partida guardada correctamente como " << filename << ".\n";
@@ -454,7 +455,7 @@ void save_game(const vector<vector<int>> &bombXY)
 
 // Función para cargar una partida guardada
 void load_game(vector<vector<int>> &bombXY)
-   {
+{
     cout << "Partidas guardadas disponibles:\n";
     vector<string> availableFiles;
 
@@ -476,13 +477,13 @@ void load_game(vector<vector<int>> &bombXY)
         return;
     }
 
-    cout << "Seleccione el número de partida a cargar (1-" << availableFiles.size() << "): ";
+    cout << "Seleccione el numero de partida a cargar (1-" << availableFiles.size() << "): ";
     int selected;
     cin >> selected;
 
     if (selected < 1 || selected > availableFiles.size())
     {
-        cout << "Opción inválida.\n";
+        cout << "Opcion invalida.\n";
         return;
     }
 
@@ -540,13 +541,9 @@ void load_game(vector<vector<int>> &bombXY)
     game_data.max_players = numPlayers;
 
     // Carga datos de cada jugador
-    for (int i = 0; i < game_data.max_players; i++) 
+    for (int i = 0; i < game_data.max_players; i++)
     {
-            archivo >> players[i].name
-            >> players[i].points
-            >> players[i].bullets
-            >> players[i].shields
-            >> players[i].is_alive;
+        archivo >> players[i].name >> players[i].points >> players[i].bullets >> players[i].shields >> players[i].is_alive;
     }
 
     archivo.close();
@@ -632,7 +629,7 @@ int game_menu()
     while (true)
     {
 
-        cout <<sprites.menu;
+        cout << sprites.menu;
         cin >> opcion;
 
         if (opcion == 1)
@@ -654,7 +651,7 @@ int game_menu()
             reset_game_state(bombXY);
 
             int dif;
-            cout <<sprites.dificulty;
+            cout << sprites.dificulty;
             cin >> dif;
 
             cout << "\n¿Con cuántos jugadores deseas jugar? (1-4): ";
@@ -671,19 +668,16 @@ int game_menu()
             bombXY = random_coordinates();
             game_multiplayer(bombXY);
         }
-  else if (opcion == 3)
-{
-    load_game(bombXY);
-    // No preguntar ni pedir nombres de nuevo
-    if (game_data.max_players < 1 || game_data.max_players > 4)
-    {
-        cout << "Número de jugadores inválido en la partida cargada.\n";
-        continue;
-    }
-    game_multiplayer(bombXY); // Reanuda el juego con datos cargados
-}
-
-
+        else if (opcion == 3)
+        {
+            load_game(bombXY);
+            // No preguntar ni pedir nombres de nuevo
+            if (game_data.max_players < 1 || game_data.max_players > 4)
+            {
+                cout << "Número de jugadores inválido en la partida cargada.\n";
+                continue;
+            }
+            game_multiplayer(bombXY); // Reanuda el juego con datos cargados
         }
         else if (opcion == 4)
         {
@@ -699,7 +693,6 @@ int game_menu()
             cout << "Opción no válida. Intenta de nuevo.\n";
         }
     }
-
     return 0;
 }
 
@@ -819,16 +812,15 @@ void pistol_shot(int &turn, bool &lose)
         return;
     }
     else if (lose)
-{
-    cout << sprites.explosion; 
-    cout << players[turn].name << " ha hecho explotar una bomba! +10 puntos\n";
-}
-else
-{
-    cout << sprites.pistol; 
-    cout << players[turn].name << " ha desperdiciado una bala, no gana puntos\n";
-}
-
+    {
+        cout << sprites.explosion;
+        cout << players[turn].name << " ha hecho explotar una bomba! +10 puntos\n";
+    }
+    else
+    {
+        cout << sprites.pistol;
+        cout << players[turn].name << " ha desperdiciado una bala, no gana puntos\n";
+    }
 
     players[turn].bullets--;
     lose = false;
