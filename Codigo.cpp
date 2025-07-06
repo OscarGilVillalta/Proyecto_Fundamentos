@@ -79,7 +79,7 @@ bool victory(int points, int playerIndex = -1);
 void save_game(const vector<vector<int>> &bombXY);
 void load_game(vector<vector<int>> &bombXY);
 void game_multiplayer(vector<vector<int>> &bombXY);
-void reset_game_state(vector<vector<int>>& bombXY);
+void reset_game_state(vector<vector<int>> &bombXY);
 void pistol_shot(int &turn, bool &lose);
 void shield_protection(int &turn, bool &lose);
 void player_action(int &turn, bool &lose);
@@ -117,6 +117,99 @@ string sprite(string typeSprite)
                 " | |                                                                      | | \n"
                 " |_|                                                                      |_| \n"
                 "(___)--------------------------------------------------------------------(___)\n";
+    }
+    else if (typeSprite == "Bomb")
+    {
+        cout << R"(
+         _.-^^---....,,--       
+     _--                  --_  
+    <                        >)
+    |                         | 
+     \._                   _./  
+        ```--. . , ; .--'''       
+              | |   |             
+           .-=||  | |=-.   
+           `-=#$%&%$#=-'   
+              | ;  :|     
+     _____.,-#%&$@%#&#~,._____
+        )" << endl;
+    }
+    else if (typeSprite == "Treasure")
+    {
+        cout << R"(
+          /\____/\
+         /  *  *  \
+        |          |
+        \  \___/   /
+         \________/
+         /        \
+        |   GOLD   |
+        \__________/
+        )" << endl;
+    }
+    else if (typeSprite == "Shield")
+    {
+        cout << R"(
+       _,--`--,_
+     ,'    _    `.
+    /    _/ \_    \
+   |    /     \    |
+   |   |       |   |
+   |   |       |   |
+    \   \     /   /
+     `.  `---'  ,'
+       `-.____.-'
+        )" << endl;
+    }
+    else if (typeSprite == "Pistol")
+    {
+        cout << R"(
+        _______ 
+       /       \__________________________________
+      /        |                                 |
+     |_________|                                 |
+     |   |     |                                 |
+     |   |     |=======>                         |
+     |___|_____|_________________________________|
+        |     |
+        |_____|
+        )" << endl;
+    }
+
+    else if (typeSprite == "GameOver")
+    {
+        cout << R"(
+       __________________________
+      /                         /
+     /        GAME OVER        /
+    /_________________________/
+    )" << endl;
+    }
+    else if (typeSprite == "Winner")
+    {
+        cout << R"(
+         .-=========-.
+        /  * * * * *  \
+       / *  WINNER!  * \
+      | *  ________  * |
+      | * |        | * |
+      | * |        | * |
+      | * |        | * |
+       \ * \______/ * /
+        \===========/
+        )" << endl;
+    }
+    else if (typeSprite == "Explosion")
+    {
+        cout << R"(
+           .-^---.
+         .'       `.
+        /           \
+       |   BOOM!     |
+        \           /
+         `.       .'
+           `-...-'
+        )" << endl;
     }
     return "";
 }
@@ -175,7 +268,6 @@ vector<vector<int>> random_coordinates()
 // Función para verificar si las coordenadas son válidas
 bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY)
 {
-
     // Verifica si está fuera de rango
     if ((coordinate[0] <= 0 || coordinate[0] > difficulty.maxColumns) ||
         (coordinate[1] <= 0 || coordinate[1] > difficulty.maxRows))
@@ -196,10 +288,13 @@ bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> 
     {
         game_data.bomb_explote.push_back(coordinate);
         error_type.bombExplote = true;
+        sprite("Bomb");
+        sprite("Explosion");
         return true;
     }
 
     game_data.treasureXY.push_back(coordinate);
+    sprite("Treasure");
     return false;
 }
 
@@ -208,6 +303,7 @@ void game_over_message()
 {
     if (error_type.bombExplote)
     {
+        sprite("GameOver");
         cout << "¡Has pisado una bomba!\n";
     }
     else if (error_type.repeatCoordinate)
@@ -227,6 +323,7 @@ void game_over_message()
 // Función mejorada para mostrar mensaje de victoria
 bool victory(int points, int playerIndex)
 {
+    sprite("Winner");
     if (playerIndex >= 0)
     {
         cout << "\n=== ¡FELICIDADES " << players[playerIndex].name << " HAS GANADO! ===\n";
@@ -253,7 +350,8 @@ void save_game(const vector<vector<int>> &bombXY)
     {
         string filename = "partida" + to_string(i) + ".txt";
         ifstream testFile(filename);
-        if (testFile.good()) existingFiles++;
+        if (testFile.good())
+            existingFiles++;
         testFile.close();
     }
 
@@ -262,7 +360,7 @@ void save_game(const vector<vector<int>> &bombXY)
         cout << "Ya existen 3 partidas guardadas. ¿Desea borrar alguna? (1=Sí, 0=No): ";
         int opcion;
         cin >> opcion;
-        
+
         if (opcion == 1)
         {
             cout << "Partidas guardadas:\n";
@@ -274,7 +372,7 @@ void save_game(const vector<vector<int>> &bombXY)
             cout << "Seleccione el número de partida a borrar (1-3): ";
             int partidaABorrar;
             cin >> partidaABorrar;
-            
+
             if (partidaABorrar >= 1 && partidaABorrar <= 3)
             {
                 string filename = "partida" + to_string(partidaABorrar) + ".txt";
@@ -308,7 +406,8 @@ void save_game(const vector<vector<int>> &bombXY)
         testFile.close();
     }
 
-    if (filename.empty()) filename = "partida1.txt"; // Por defecto si no hay espacio
+    if (filename.empty())
+        filename = "partida1.txt"; // Por defecto si no hay espacio
 
     ofstream archivo(filename);
     if (!archivo)
@@ -357,7 +456,7 @@ void load_game(vector<vector<int>> &bombXY)
 {
     cout << "Partidas guardadas disponibles:\n";
     vector<string> availableFiles;
-    
+
     for (int i = 1; i <= 3; i++)
     {
         string filename = "partida" + to_string(i) + ".txt";
@@ -386,7 +485,7 @@ void load_game(vector<vector<int>> &bombXY)
         return;
     }
 
-    ifstream archivo(availableFiles[selected-1]);
+    ifstream archivo(availableFiles[selected - 1]);
     if (!archivo)
     {
         cout << "No se pudo cargar la partida.\n";
@@ -436,12 +535,12 @@ void load_game(vector<vector<int>> &bombXY)
     }
 
     archivo.close();
-    cout << "Partida cargada correctamente desde " << availableFiles[selected-1] << ".\n";
+    cout << "Partida cargada correctamente desde " << availableFiles[selected - 1] << ".\n";
 
     game_multiplayer(bombXY);
 }
 
-// Función para imprimir el tablero de juego (se modifico para mostrar correctamente las posiciones)
+// Función para imprimir el tablero de juego
 void print_board()
 {
     bool bomb_coordinate, treasure_coordinate;
@@ -505,7 +604,7 @@ void print_board()
             }
             else if (explored)
             {
-                cout << " . ";  // Punto para coordenadas exploradas sin tesoro
+                cout << " . ";
             }
             else
             {
@@ -524,7 +623,6 @@ int game_menu()
 
     while (true)
     {
-
         cout << R"( 
 ╔══════════════════════════════════════════════╗
 ║         ███ ENCUENTRA EL TESORO ███          ║
@@ -605,7 +703,7 @@ Seleccione una opción: )";
     return 0;
 }
 
-// Función para modo multijugador (modificada para usar la nueva función de victoria)
+// Función para modo multijugador
 void game_multiplayer(vector<vector<int>> &bombXY)
 {
     bool lose = false;
@@ -621,8 +719,8 @@ void game_multiplayer(vector<vector<int>> &bombXY)
         {
             if (players[turn].is_alive)
             {
-
                 cout << "\nTurno de " << players[turn].name << " (Puntos: " << players[turn].points << ")\n";
+                cout << "Balas: " << players[turn].bullets << " | Escudos: " << players[turn].shields << endl;
                 cout << "Ingrese sus coordenadas (X Y): \n";
                 cout << "X: ";
                 cin >> positionX;
@@ -739,10 +837,12 @@ void pistol_shot(int &turn, bool &lose)
     }
     else if (lose)
     {
+        sprite("Pistol");
         cout << players[turn].name << " a hecho explotar una bomba! +10 puntos\n";
     }
     else
     {
+        sprite("Pistol");
         cout << players[turn].name << " a desperdiciado una bala!, no gana puntos\n";
     }
 
@@ -760,12 +860,14 @@ void shield_protection(int &turn, bool &lose)
     }
     else if (lose)
     {
+        sprite("Shield");
         cout << players[turn].name << " se ha protegido de una bomba! +10 puntos\n";
         players[turn].shields--;
         lose = false;
     }
     else
     {
+        sprite("Shield");
         cout << players[turn].name << " a gastado un escudo, no gana puntos\n";
         players[turn].shields--;
         lose = false;
