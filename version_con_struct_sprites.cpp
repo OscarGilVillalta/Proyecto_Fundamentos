@@ -25,39 +25,133 @@ struct Difficulty
 } difficulty;
 
 struct Sprites {
-    string title =
-        " ___                                                                      ___ \n"
-        "( _ )--------------------------------------------------------------------( _ )\n"
-        " | |                                                                      | | \n"
-        " | |                                                                      | | \n"
-        " | |   ######  ######  ##  ##  #####           ######  ##  ##  ######     | | \n"
-        " | |   ##        ##    ### ##  ##  ##            ##    ##  ##  ##         | | \n"
-        " | |   ####      ##    ## ###  ##  ##            ##    ######  ####       | | \n"
-        " | |   ##        ##    ##  ##  ##  ##            ##    ##  ##  ##         | | \n"
-        " | |   ##      ######  ##  ##  #####             ##    ##  ##  ######     | | \n"
-        " | |   ................................................................   | | \n"
-        " | |   ######  #####   ######   ####    ####    ##  ##  #####   ######    | | \n"
-        " | |     ##    ##  ##  ##      ##  ##  ##       ##  ##  ##  ##  ##        | | \n"
-        " | |     ##    #####   ####    ######   ####    ##  ##  #####   ####      | | \n"
-        " | |     ##    ##  ##  ##      ##  ##      ##   ##  ##  ##  ##  ##        | | \n"
-        " | |     ##    ##  ##  ######  ##  ##   ####     ####   ##  ##  ######    | | \n"
-        " | |   ................................................................   | | \n"
-        " | |                                                                      | | \n"
-        " |_|                                                                      |_| \n"
-        "(___)--------------------------------------------------------------------(___)\n";
+    string title = R"(
 
-    string menu =
-        "|------------------------------------------|\n"
-        "|   **** ENCUENTRA EL TESORO ****          |\n"
-        "|__________________________________________|\n"
-        "|  1. Jugar modo Solitario                 |\n"
-        "|  2. Jugar modo Multijugador              |\n"
-        "|  3. Cargar partida                       |\n"
-        "|  4. Guardar partida                      |\n"
-        "|  5. Salir del juego                      |\n"
-        "|------------------------------------------|\n"
-        "Seleccione una opción: ";
-} sprites;
+  ___                                                                      ___ 
+ ( _ )--------------------------------------------------------------------( _ )
+  | |                                                                      | | 
+  | |                                                                      | | 
+  | |   ######  ######  ##  ##  #####           ######  ##  ##  ######     | | 
+  | |   ##        ##    ### ##  ##  ##            ##    ##  ##  ##         | | 
+  | |   ####      ##    ## ###  ##  ##            ##    ######  ####       | | 
+  | |   ##        ##    ##  ##  ##  ##            ##    ##  ##  ##         | | 
+  | |   ##      ######  ##  ##  #####             ##    ##  ##  ######     | | 
+  | |   ................................................................   | | 
+  | |   ######  #####   ######   ####    ####    ##  ##  #####   ######    | | 
+  | |     ##    ##  ##  ##      ##  ##  ##       ##  ##  ##  ##  ##        | | 
+  | |     ##    #####   ####    ######   ####    ##  ##  #####   ####      | | 
+  | |     ##    ##  ##  ##      ##  ##      ##   ##  ##  ##  ##  ##        | | 
+  | |     ##    ##  ##  ######  ##  ##   ####     ####   ##  ##  ######    | | 
+  | |   ................................................................   | | 
+  |_|                                                                      |_| 
+ (___)--------------------------------------------------------------------(___)
+    )";
+
+    string menu = R"(
+ ____________________________________ 
+|                                    |
+|   **** ENCUENTRA EL TESORO ****    |
+|------------------------------------|
+|  1. Jugar modo Solitario           |
+|  2. Jugar modo Multijugador        |
+|  3. Cargar partida                 |
+|  4. Guardar partida                |
+|  5. Salir del juego                |
+|____________________________________|
+Seleccione una opción: )";
+
+    string dificulty = R"(
+ _______________________________________
+|                                       |
+|        Selecciona dificultad:         |
+|---------------------------------------|
+| 1. Fácil (10x10 - 30 bombas)          |
+| 2. Medio (20x20 - 80 bombas)          |
+| 3. Difícil (30x30 - 100 bombas)       |
+|_______________________________________|
+Opción: )";
+
+    string bomb = R"(
+         _.-^^---....,,--       
+     _--                  --_  
+    <                        >)
+    |                         | 
+     \._                   _./  
+        ```--. . , ; .--'''       
+              | |   |             
+           .-=||  | |=-.   
+           `-=#$%&%$#=-'   
+              | ;  :|     
+     _____.,-#%&$@%#&#~,._____
+)";
+
+    string treasure = R"(
+      /\____/\
+     /  *  *  \
+    |          |
+    \  \___/   /
+     \________/
+     /        \
+    |   GOLD   |
+    \__________/
+)";
+
+    string shield = R"(
+   _,--`--,_
+ ,'    _    `.
+ /    _/ \_    \
+|    /     \    |
+|   |       |   |
+|   |       |   |
+ \   \     /   /
+  `.  `---'  ,'
+    `-.____.-'
+)";
+
+    string pistol = R"(
+        _______ 
+       /       \__________________________________
+      /        |                                 |
+     |_________|                                 |
+     |   |     |                                 |
+     |   |     |=======>                         |
+     |___|_____|_________________________________|
+        |     |
+        |_____|
+)";
+
+    string gameOver = R"(
+   __________________________
+  /                         /
+ /        GAME OVER        /
+/_________________________/
+)";
+
+    string winner = R"(
+     .-=========-.
+    /  * * * * *  \
+   / *  WINNER!  * \
+  | *  ________  * |
+  | * |        | * |
+  | * |        | * |
+  | * |        | * |
+   \ * \______/ * /
+    \===========/
+)";
+
+    string explosion = R"(
+       .-^---.
+     .'       `.
+    /           \
+   |   BOOM!     |
+    \           /
+     `.       .'
+       `-...-'
+)";
+};
+
+Sprites sprites;
+
 struct GameData
 {
     int max_players;
@@ -213,7 +307,7 @@ void game_over_message()
 {
     if (error_type.bombExplote)
     {
-        cout << "¡Has pisado una bomba!\n";
+        cout << sprites.gameOver << "\n¡Has pisado una bomba!\n";
     }
     else if (error_type.repeatCoordinate)
     {
@@ -232,14 +326,79 @@ void game_over_message()
 // Función para mostrar mensaje de victoria
 bool victory(int points)
 {
-    cout << "¡Has sobrevivido!\nPuntos: " << points << "\n";
+    cout << sprites.winner << "\n¡Has sobrevivido!\nPuntos: " << points << "\n";
     return true;
 }
 
 // Función para guardar el estado del juego
 void save_game(const vector<vector<int>> &bombXY)
 {
-    ofstream archivo("partida.txt");
+    // Verificar cuántos archivos de partida existen
+    int existingFiles = 0;
+    for (int i = 1; i <= 3; i++)
+    {
+        string filename = "partida" + to_string(i) + ".txt";
+        ifstream testFile(filename);
+        if (testFile.good())
+            existingFiles++;
+        testFile.close();
+    }
+
+    if (existingFiles >= 3)
+    {
+        cout << "Ya existen 3 partidas guardadas. ¿Desea borrar alguna? (1=Sí, 0=No): ";
+        int opcion;
+        cin >> opcion;
+
+        if (opcion == 1)
+        {
+            cout << "Partidas guardadas:\n";
+            for (int i = 1; i <= 3; i++)
+            {
+                string filename = "partida" + to_string(i) + ".txt";
+                cout << i << ". " << filename << "\n";
+            }
+            cout << "Seleccione el número de partida a borrar (1-3): ";
+            int partidaABorrar;
+            cin >> partidaABorrar;
+
+            if (partidaABorrar >= 1 && partidaABorrar <= 3)
+            {
+                string filename = "partida" + to_string(partidaABorrar) + ".txt";
+                remove(filename.c_str());
+                cout << "Partida " << partidaABorrar << " borrada.\n";
+            }
+            else
+            {
+                cout << "Opción inválida. No se guardó la partida.\n";
+                return;
+            }
+        }
+        else
+        {
+            cout << "No se guardó la partida.\n";
+            return;
+        }
+    }
+
+    // Determinar el nombre del archivo para guardar
+    string filename;
+    for (int i = 1; i <= 3; i++)
+    {
+        string testFilename = "partida" + to_string(i) + ".txt";
+        ifstream testFile(testFilename);
+        if (!testFile.good())
+        {
+            filename = testFilename;
+            break;
+        }
+        testFile.close();
+    }
+
+    if (filename.empty())
+        filename = "partida1.txt"; // Por defecto si no hay espacio
+
+    ofstream archivo(filename);
     if (!archivo)
     {
         cout << "No se pudo guardar la partida.\n";
@@ -277,14 +436,57 @@ void save_game(const vector<vector<int>> &bombXY)
         archivo << coordinates[0] << " " << coordinates[1] << "\n";
     }
 
+    // Guarda la cantidad de jugadores
+    archivo << game_data.max_players << "\n";
+
+    // Guarda datos de cada jugador
+    for (int i = 0; i < game_data.max_players; i++) 
+    {
+            archivo << players[i].name << " "
+            << players[i].points << " "
+            << players[i].bullets << " "
+            << players[i].shields << " "
+            << players[i].is_alive << "\n";
+    }
     archivo.close();
-    cout << "Partida guardada correctamente.\n";
+    cout << "Partida guardada correctamente como " << filename << ".\n";
 }
 
 // Función para cargar una partida guardada
 void load_game(vector<vector<int>> &bombXY)
-{
-    ifstream archivo("partida.txt");
+   {
+    cout << "Partidas guardadas disponibles:\n";
+    vector<string> availableFiles;
+
+    for (int i = 1; i <= 3; i++)
+    {
+        string filename = "partida" + to_string(i) + ".txt";
+        ifstream testFile(filename);
+        if (testFile.good())
+        {
+            cout << i << ". " << filename << "\n";
+            availableFiles.push_back(filename);
+        }
+        testFile.close();
+    }
+
+    if (availableFiles.empty())
+    {
+        cout << "No hay partidas guardadas disponibles.\n";
+        return;
+    }
+
+    cout << "Seleccione el número de partida a cargar (1-" << availableFiles.size() << "): ";
+    int selected;
+    cin >> selected;
+
+    if (selected < 1 || selected > availableFiles.size())
+    {
+        cout << "Opción inválida.\n";
+        return;
+    }
+
+    ifstream archivo(availableFiles[selected - 1]);
     if (!archivo)
     {
         cout << "No se pudo cargar la partida.\n";
@@ -332,9 +534,23 @@ void load_game(vector<vector<int>> &bombXY)
         archivo >> coord[0] >> coord[1];
         game_data.treasureXY.push_back(coord);
     }
+    // Carga la cantidad de jugadores
+    int numPlayers;
+    archivo >> numPlayers;
+    game_data.max_players = numPlayers;
+
+    // Carga datos de cada jugador
+    for (int i = 0; i < game_data.max_players; i++) 
+    {
+            archivo >> players[i].name
+            >> players[i].points
+            >> players[i].bullets
+            >> players[i].shields
+            >> players[i].is_alive;
+    }
 
     archivo.close();
-    cout << "Partida cargada correctamente.\n";
+    cout << "Partida cargada correctamente desde " << availableFiles[selected - 1] << ".\n";
 
     game_multiplayer(bombXY);
 }
@@ -425,11 +641,7 @@ int game_menu()
             game_data.max_players = 1;
 
             int dif;
-            cout << "\nSelecciona dificultad:\n";
-            cout << "1. Fácil (10x10 - 30 bombas)\n";
-            cout << "2. Medio (20x20 - 80 bombas)\n";
-            cout << "3. Difícil (30x30 - 100 bombas)\n";
-            cout << "Opción: ";
+            cout << sprites.dificulty;
             cin >> dif;
 
             menu_difficulty(dif);
@@ -442,11 +654,7 @@ int game_menu()
             reset_game_state(bombXY);
 
             int dif;
-            cout << "\nSelecciona dificultad para Multijugador:\n";
-            cout << "1. Fácil (10x10 - 30 bombas)\n";
-            cout << "2. Medio (20x20 - 80 bombas)\n";
-            cout << "3. Difícil (30x30 - 100 bombas)\n";
-            cout << "Opción: ";
+            cout <<sprites.dificulty;
             cin >> dif;
 
             cout << "\n¿Con cuántos jugadores deseas jugar? (1-4): ";
@@ -463,10 +671,19 @@ int game_menu()
             bombXY = random_coordinates();
             game_multiplayer(bombXY);
         }
-        else if (opcion == 3)
-        {
-            load_game(bombXY);
-            print_board();
+  else if (opcion == 3)
+{
+    load_game(bombXY);
+    // No preguntar ni pedir nombres de nuevo
+    if (game_data.max_players < 1 || game_data.max_players > 4)
+    {
+        cout << "Número de jugadores inválido en la partida cargada.\n";
+        continue;
+    }
+    game_multiplayer(bombXY); // Reanuda el juego con datos cargados
+}
+
+
         }
         else if (opcion == 4)
         {
@@ -602,13 +819,16 @@ void pistol_shot(int &turn, bool &lose)
         return;
     }
     else if (lose)
-    {
-        cout << players[turn].name << " a hecho explotar una bomba! +10 puntos\n";
-    }
-    else
-    {
-        cout << players[turn].name << " a desperdiciado una bala!, no gana puntos\n";
-    }
+{
+    cout << sprites.explosion; 
+    cout << players[turn].name << " ha hecho explotar una bomba! +10 puntos\n";
+}
+else
+{
+    cout << sprites.pistol; 
+    cout << players[turn].name << " ha desperdiciado una bala, no gana puntos\n";
+}
+
 
     players[turn].bullets--;
     lose = false;
@@ -624,6 +844,7 @@ void shield_protection(int &turn, bool &lose)
     }
     else if (lose)
     {
+        cout << sprites.shield;
         cout << players[turn].name << " se ha protegido de una bomba! +10 puntos\n";
         players[turn].shields--;
         lose = false;
