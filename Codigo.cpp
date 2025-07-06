@@ -7,15 +7,13 @@
 using namespace std;
 
 // Estructura para manejar la dificultad del juego
-struct Difficulty
-{
+struct Difficulty {
     int maxRows;    // Número máximo de filas
     int maxColumns; // Número máximo de columnas
     int maxBombs;   // Número máximo de bombas
     int maxBullets; // Número máximo de balas
     int maxShields; // Número máximo de escudos
-    void reset()
-    { // Restablece los valores predeterminados
+    void reset() {
         maxRows = 0;
         maxColumns = 0;
         maxBombs = 0;
@@ -24,48 +22,95 @@ struct Difficulty
     }
 } difficulty;
 
-struct GameData
-{
+// Estructura para manejar información del juego
+struct GameData {
     int max_players;
     bool game_status = true;
-    vector<vector<int>> bomb_explote; // Coordenadas de bombas explotadas
-    vector<vector<int>> repeat;       // Coordenadas repetidas
-    vector<vector<int>> treasureXY;   // Coordenadas de tesoros encontrados
+    vector<vector<int>> bomb_explote;
+    vector<vector<int>> repeat;
+    vector<vector<int>> treasureXY;
 
-    void reset()
-    {
+    void reset() {
         bomb_explote.clear();
         repeat.clear();
         treasureXY.clear();
     }
 } game_data;
 
-// Estructura para manejar información de jugadores (para modo multijugador)
-struct Players
-{
-    string name;   // Nombre del jugador
-    int points;    // Puntos acumulados
-    int bullets;   // Balas disponibles
-    int shields;   // Escudo disponible
-    bool is_alive; // Indica si el jugador está vivo
+// Estructura para manejar información de jugadores
+struct Players {
+    string name;    // Nombre del jugador
+    int points;     // Puntos acumulados
+    int bullets;    // Balas disponibles
+    int shields;    // Escudos disponibles
+    bool action_shoot; // Acción de disparar
+    bool action_protect; // Acción de proteger
+    bool excavate;  // Acción de excavar
+    bool is_alive;  // Indica si el jugador está vivo
+
+    void actions_reset() {
+        action_shoot = false;
+        action_protect = false;
+        excavate = false;
+    }
 } players[5];
 
 // Estructura para manejar el estado del juego
-struct ErrorType
-{
-    bool bombExplote;      // Indica si explotó una bomba
-    bool repeatCoordinate; // Indica si se repitió coordenada
-    bool outOfRange;       // Indica si coordenada está fuera de rango
-    bool dataTypeInvalid;  // Indica si el tipo de dato es inválido
+struct ErrorType {
+    bool bombExplote;
+    bool repeatCoordinate;
+    bool outOfRange;
+    bool dataTypeInvalid;
 
-    void reset()
-    { // Restablece el estado del juego
+    void reset() {
         bombExplote = false;
         repeatCoordinate = false;
         outOfRange = false;
         dataTypeInvalid = false;
-    };
+    }
 } error_type;
+
+// Función para guardar datos de los jugadores
+void save_players_data(ofstream &archivo) {
+    archivo << difficulty.maxRows << " " 
+            << difficulty.maxColumns << " " 
+            << difficulty.maxBombs << " "
+            << difficulty.maxBullets << " "
+            << difficulty.maxShields << "\n";
+            
+    archivo << game_data.max_players << "\n";
+    for (int i = 0; i < game_data.max_players; i++) {
+        archivo << players[i].name << " " 
+                << players[i].points << " " 
+                << players[i].bullets << " " 
+                << players[i].shields << " "
+                << players[i].action_shoot << " "
+                << players[i].action_protect << " "
+                << players[i].excavate << " "
+                << players[i].is_alive << "\n";
+    }
+}
+
+// Función para cargar datos de los jugadores
+void load_players_data(ifstream &archivo) {
+    archivo >> difficulty.maxRows 
+            >> difficulty.maxColumns 
+            >> difficulty.maxBombs
+            >> difficulty.maxBullets
+            >> difficulty.maxShields;
+            
+    archivo >> game_data.max_players;
+    for (int i = 0; i < game_data.max_players; i++) {
+        archivo >> players[i].name 
+                >> players[i].points 
+                >> players[i].bullets 
+                >> players[i].shields
+                >> players[i].action_shoot
+                >> players[i].action_protect
+                >> players[i].excavate
+                >> players[i].is_alive;
+    }
+}
 
 // Prototipos de funciones
 void print_board();
@@ -93,7 +138,6 @@ int main()
     return 0;
 }
 
-// Función para mostrar gráficos ASCII del juego
 string sprite(string typeSprite)
 {
     if (typeSprite == "Title")
@@ -175,7 +219,6 @@ string sprite(string typeSprite)
         |_____|
         )" << endl;
     }
-
     else if (typeSprite == "GameOver")
     {
         cout << R"(
@@ -222,7 +265,6 @@ string sprite(string typeSprite)
     return "";
 }
 
-// Función para configurar la dificultad del juego
 void menu_difficulty(int dif)
 {
     switch (dif)
@@ -253,7 +295,6 @@ void menu_difficulty(int dif)
     }
 }
 
-// Función para generar coordenadas aleatorias de bombas
 vector<vector<int>> random_coordinates()
 {
     vector<vector<int>> bombXY;
@@ -273,10 +314,8 @@ vector<vector<int>> random_coordinates()
     return bombXY;
 }
 
-// Función para verificar si las coordenadas son válidas
 bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY)
 {
-    // Verifica si está fuera de rango
     if ((coordinate[0] <= 0 || coordinate[0] > difficulty.maxColumns) ||
         (coordinate[1] <= 0 || coordinate[1] > difficulty.maxRows))
     {
@@ -284,14 +323,12 @@ bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> 
         return true;
     }
 
-    // Verifica si es coordenada repetida
     if (find(game_data.repeat.begin(), game_data.repeat.end(), coordinate) != game_data.repeat.end())
     {
         error_type.repeatCoordinate = true;
         return true;
     }
 
-    // Verifica si es una bomba
     if (find(bombXY.begin(), bombXY.end(), coordinate) != bombXY.end())
     {
         game_data.bomb_explote.push_back(coordinate);
@@ -306,7 +343,6 @@ bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> 
     return false;
 }
 
-// Función para mostrar mensaje de fin de juego
 void game_over_message()
 {
     if (error_type.bombExplote)
@@ -328,19 +364,16 @@ void game_over_message()
     }
 }
 
-// Función mejorada para mostrar mensaje de victoria con ranking
 bool victory(int points, int playerIndex)
 {
     sprite("Winner");
 
-    // Mostrar ranking de jugadores
     vector<pair<int, string>> rankings;
     for (int i = 0; i < game_data.max_players; i++)
     {
         rankings.emplace_back(players[i].points, players[i].name);
     }
 
-    // Ordenar de mayor a menor puntaje
     sort(rankings.rbegin(), rankings.rend());
 
     cout << "\n=== TABLA DE POSICIONES ===\n";
@@ -364,7 +397,6 @@ bool victory(int points, int playerIndex)
     return true;
 }
 
-// Función modificada para guardar el estado del juego (con límite de 3 archivos)
 void save_game(const vector<vector<int>> &bombXY)
 {
     vector<string> existingFiles;
@@ -419,7 +451,7 @@ void save_game(const vector<vector<int>> &bombXY)
             return;
         }
 
-        archivo << difficulty.maxRows << " " << difficulty.maxColumns << " " << difficulty.maxBombs << "\n";
+        save_players_data(archivo);
 
         archivo << bombXY.size() << "\n";
         for (const vector<int> &coordinates : bombXY)
@@ -465,7 +497,8 @@ void save_game(const vector<vector<int>> &bombXY)
                 return;
             }
 
-            archivo << difficulty.maxRows << " " << difficulty.maxColumns << " " << difficulty.maxBombs << "\n";
+            save_players_data(archivo);
+
             archivo << bombXY.size() << "\n";
             for (const vector<int> &coordinates : bombXY)
             {
@@ -498,7 +531,6 @@ void save_game(const vector<vector<int>> &bombXY)
     }
 }
 
-// Función mejorada para cargar una partida guardada
 void load_game(vector<vector<int>> &bombXY)
 {
     cout << "\n=== PARTIDAS GUARDADAS ===\n";
@@ -543,11 +575,7 @@ void load_game(vector<vector<int>> &bombXY)
 
     reset_game_state(bombXY);
 
-    if (!(archivo >> difficulty.maxRows >> difficulty.maxColumns >> difficulty.maxBombs))
-    {
-        cout << "Error leyendo configuración de dificultad.\n";
-        return;
-    }
+    load_players_data(archivo);
 
     auto loadCoordinates = [&archivo](vector<vector<int>> &vec)
     {
@@ -579,18 +607,15 @@ void load_game(vector<vector<int>> &bombXY)
     archivo.close();
     cout << "Partida cargada exitosamente desde " << selectedFile << "\n";
 
-    game_data.max_players = 1;
-    player_configuration();
+    print_board();
     game_multiplayer(bombXY);
 }
 
-// Función para imprimir el tablero de juego
 void print_board()
 {
     bool bomb_coordinate, treasure_coordinate;
 
     cout << "\n=== TABLERO DE JUEGO ===\n";
-    // Imprimir números de columnas
     cout << "   ";
     for (int col = 1; col <= difficulty.maxColumns; col++)
     {
@@ -603,7 +628,6 @@ void print_board()
 
     for (int row = 1; row <= difficulty.maxRows; row++)
     {
-        // Imprimir número de fila
         if (row < 10)
             cout << " " << row << " ";
         else
@@ -614,7 +638,6 @@ void print_board()
             bomb_coordinate = false;
             treasure_coordinate = false;
 
-            // Verifica si la posición contiene una bomba explotada
             for (const vector<int> &bomb : game_data.bomb_explote)
             {
                 if (bomb[0] == column && bomb[1] == row)
@@ -624,7 +647,6 @@ void print_board()
                 }
             }
 
-            // Verifica si la posición contiene un tesoro
             for (const vector<int> &treasure : game_data.treasureXY)
             {
                 if (treasure[0] == column && treasure[1] == row)
@@ -634,10 +656,8 @@ void print_board()
                 }
             }
 
-            // Verifica si es una coordenada repetida (explorada pero sin tesoro)
             bool explored = find(game_data.repeat.begin(), game_data.repeat.end(), vector<int>{column, row}) != game_data.repeat.end();
 
-            // Imprime el símbolo correspondiente
             if (bomb_coordinate)
             {
                 cout << " ! ";
@@ -755,7 +775,6 @@ Seleccione una opción: )";
     return 0;
 }
 
-// Función para modo multijugador
 void game_multiplayer(vector<vector<int>> &bombXY)
 {
     bool lose = false;
@@ -856,26 +875,36 @@ void player_configuration()
         cout << "Nombre del jugador " << i + 1 << ": ";
         cin >> players[i].name;
         players[i].points = 0;
-        players[i].is_alive = true;
         players[i].bullets = difficulty.maxBullets;
         players[i].shields = difficulty.maxShields;
+        players[i].action_shoot = false;
+        players[i].action_protect = false;
+        players[i].excavate = false;
+        players[i].is_alive = true;
     }
 }
 
-// Función para reiniciar el estado del juego
 void reset_game_state(vector<vector<int>> &bombXY)
 {
     game_data.reset();
     error_type.reset();
     bombXY.clear();
-    for (int i = 0; i < 4; i++)
+    
+    for (int i = 0; i < 5; i++)
     {
+        players[i].name = "";
         players[i].points = 0;
+        players[i].bullets = 0;
+        players[i].shields = 0;
+        players[i].action_shoot = false;
+        players[i].action_protect = false;
+        players[i].excavate = false;
         players[i].is_alive = false;
     }
+    
+    difficulty.reset();
 }
 
-// Función para disparar con pistola
 void pistol_shot(int &turn, bool &lose)
 {
     if (players[turn].bullets == 0)
@@ -898,7 +927,6 @@ void pistol_shot(int &turn, bool &lose)
     lose = false;
 }
 
-// Función para protegerse con escudo
 void shield_protection(int &turn, bool &lose)
 {
     if (players[turn].shields == 0)
@@ -942,12 +970,21 @@ void player_action(int &turn, bool &lose)
     switch (action)
     {
     case 1: // Excavar
+        players[turn].excavate = true;
+        players[turn].action_shoot = false;
+        players[turn].action_protect = false;
         cout << "Usted ha excavado... \n";
         break;
     case 2: // Protegerse
+        players[turn].action_protect = true;
+        players[turn].excavate = false;
+        players[turn].action_shoot = false;
         shield_protection(turn, lose);
         break;
     case 3: // Disparar con pistola
+        players[turn].action_shoot = true;
+        players[turn].excavate = false;
+        players[turn].action_protect = false;
         pistol_shot(turn, lose);
         break;
     }
