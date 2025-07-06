@@ -137,15 +137,15 @@ string sprite(string typeSprite)
     else if (typeSprite == "Treasure")
     {
         cout << R"(
-          /\____/\
-         /  *  *  \
-        |          |
-        \  \___/   /
-         \________/
-         /        \
-        |   GOLD   |
-        \__________/
-        )" << endl;
+       /\
+      /  \
+     /    \
+    /      \
+    \      /
+     \    /
+      \  /
+       \/
+    )" << endl;
     }
     else if (typeSprite == "Shield")
     {
@@ -188,16 +188,24 @@ string sprite(string typeSprite)
     else if (typeSprite == "Winner")
     {
         cout << R"(
-         .-=========-.
-        /  * * * * *  \
-       / *  WINNER!  * \
-      | *  ________  * |
-      | * |        | * |
-      | * |        | * |
-      | * |        | * |
-       \ * \______/ * /
-        \===========/
-        )" << endl;
+            .-===========-. 
+         (                  )
+          |       #1       |
+          |                |
+          |    ________    |
+          |                |
+           \     ____     /
+            \   \    /   /
+             '.  \  /  .'
+               '._\/_.'
+                  ||
+                  ||
+               .-'  '--.
+              /        \
+             |   WIN    |
+              \        /
+               '-____-'
+    )" << endl;
     }
     else if (typeSprite == "Explosion")
     {
@@ -205,7 +213,7 @@ string sprite(string typeSprite)
            .-^---.
          .'       `.
         /           \
-       |   BOOM!     |
+       |    BOOM!    |
         \           /
          `.       .'
            `-...-'
@@ -324,30 +332,35 @@ void game_over_message()
 bool victory(int points, int playerIndex)
 {
     sprite("Winner");
-    
+
     // Mostrar ranking de jugadores
     vector<pair<int, string>> rankings;
-    for (int i = 0; i < game_data.max_players; i++) {
+    for (int i = 0; i < game_data.max_players; i++)
+    {
         rankings.emplace_back(players[i].points, players[i].name);
     }
-    
+
     // Ordenar de mayor a menor puntaje
     sort(rankings.rbegin(), rankings.rend());
-    
+
     cout << "\n=== TABLA DE POSICIONES ===\n";
-    for (size_t i = 0; i < rankings.size(); i++) {
-        cout << i+1 << ". " << rankings[i].second << ": " << rankings[i].first << " puntos\n";
+    for (size_t i = 0; i < rankings.size(); i++)
+    {
+        cout << i + 1 << ". " << rankings[i].second << ": " << rankings[i].first << " puntos\n";
     }
 
-    if (playerIndex >= 0) {
+    if (playerIndex >= 0)
+    {
         cout << "\n¡FELICIDADES " << players[playerIndex].name << " HAS GANADO!\n";
-    } else {
+    }
+    else
+    {
         cout << "\n¡HAS GANADO!\n";
     }
-    
+
     cout << "Puntos finales: " << points << "\n";
     print_board();
-    
+
     return true;
 }
 
@@ -355,46 +368,53 @@ bool victory(int points, int playerIndex)
 void save_game(const vector<vector<int>> &bombXY)
 {
     vector<string> existingFiles;
-    for (int i = 1; i <= 3; i++) {
+    for (int i = 1; i <= 3; i++)
+    {
         string filename = "partida" + to_string(i) + ".txt";
         ifstream testFile(filename);
-        if (testFile.good()) {
+        if (testFile.good())
+        {
             existingFiles.push_back(filename);
         }
         testFile.close();
     }
 
-    if (existingFiles.size() >= 3) {
+    if (existingFiles.size() >= 3)
+    {
         cout << "\n¡Límite de 3 partidas guardadas alcanzado!\n";
         cout << "Partidas existentes:\n";
-        for (int i = 0; i < existingFiles.size(); i++) {
-            cout << i+1 << ". " << existingFiles[i] << "\n";
+        for (int i = 0; i < existingFiles.size(); i++)
+        {
+            cout << i + 1 << ". " << existingFiles[i] << "\n";
         }
-        
+
         cout << "Elija una opción:\n";
         cout << "1. Sobrescribir una partida existente\n";
         cout << "2. Cancelar guardado\n";
         cout << "Opción: ";
         int opcion;
         cin >> opcion;
-        
-        if (opcion != 1) {
+
+        if (opcion != 1)
+        {
             cout << "Guardado cancelado.\n";
             return;
         }
-        
+
         cout << "Seleccione el número de partida a sobrescribir (1-3): ";
         int seleccion;
         cin >> seleccion;
-        
-        if (seleccion < 1 || seleccion > 3) {
+
+        if (seleccion < 1 || seleccion > 3)
+        {
             cout << "Opción inválida. Guardado cancelado.\n";
             return;
         }
-        
+
         string filename = "partida" + to_string(seleccion) + ".txt";
         ofstream archivo(filename);
-        if (!archivo) {
+        if (!archivo)
+        {
             cout << "No se pudo guardar la partida.\n";
             return;
         }
@@ -402,22 +422,26 @@ void save_game(const vector<vector<int>> &bombXY)
         archivo << difficulty.maxRows << " " << difficulty.maxColumns << " " << difficulty.maxBombs << "\n";
 
         archivo << bombXY.size() << "\n";
-        for (const vector<int> &coordinates : bombXY) {
+        for (const vector<int> &coordinates : bombXY)
+        {
             archivo << coordinates[0] << " " << coordinates[1] << "\n";
         }
 
         archivo << game_data.repeat.size() << "\n";
-        for (const vector<int> &coordinates : game_data.repeat) {
+        for (const vector<int> &coordinates : game_data.repeat)
+        {
             archivo << coordinates[0] << " " << coordinates[1] << "\n";
         }
 
         archivo << game_data.bomb_explote.size() << "\n";
-        for (const vector<int> &coordinates : game_data.bomb_explote) {
+        for (const vector<int> &coordinates : game_data.bomb_explote)
+        {
             archivo << coordinates[0] << " " << coordinates[1] << "\n";
         }
 
         archivo << game_data.treasureXY.size() << "\n";
-        for (const vector<int> &coordinates : game_data.treasureXY) {
+        for (const vector<int> &coordinates : game_data.treasureXY)
+        {
             archivo << coordinates[0] << " " << coordinates[1] << "\n";
         }
 
@@ -426,36 +450,43 @@ void save_game(const vector<vector<int>> &bombXY)
         return;
     }
 
-    for (int i = 1; i <= 3; i++) {
+    for (int i = 1; i <= 3; i++)
+    {
         string filename = "partida" + to_string(i) + ".txt";
         ifstream testFile(filename);
-        if (!testFile.good()) {
+        if (!testFile.good())
+        {
             testFile.close();
-            
+
             ofstream archivo(filename);
-            if (!archivo) {
+            if (!archivo)
+            {
                 cout << "No se pudo guardar la partida.\n";
                 return;
             }
 
             archivo << difficulty.maxRows << " " << difficulty.maxColumns << " " << difficulty.maxBombs << "\n";
             archivo << bombXY.size() << "\n";
-            for (const vector<int> &coordinates : bombXY) {
+            for (const vector<int> &coordinates : bombXY)
+            {
                 archivo << coordinates[0] << " " << coordinates[1] << "\n";
             }
 
             archivo << game_data.repeat.size() << "\n";
-            for (const vector<int> &coordinates : game_data.repeat) {
+            for (const vector<int> &coordinates : game_data.repeat)
+            {
                 archivo << coordinates[0] << " " << coordinates[1] << "\n";
             }
 
             archivo << game_data.bomb_explote.size() << "\n";
-            for (const vector<int> &coordinates : game_data.bomb_explote) {
+            for (const vector<int> &coordinates : game_data.bomb_explote)
+            {
                 archivo << coordinates[0] << " " << coordinates[1] << "\n";
             }
 
             archivo << game_data.treasureXY.size() << "\n";
-            for (const vector<int> &coordinates : game_data.treasureXY) {
+            for (const vector<int> &coordinates : game_data.treasureXY)
+            {
                 archivo << coordinates[0] << " " << coordinates[1] << "\n";
             }
 
@@ -472,18 +503,21 @@ void load_game(vector<vector<int>> &bombXY)
 {
     cout << "\n=== PARTIDAS GUARDADAS ===\n";
     vector<string> availableFiles;
-    
-    for (int i = 1; i <= 3; i++) {
+
+    for (int i = 1; i <= 3; i++)
+    {
         string filename = "partida" + to_string(i) + ".txt";
         ifstream testFile(filename);
-        if (testFile.good()) {
+        if (testFile.good())
+        {
             cout << i << ". " << filename << "\n";
             availableFiles.push_back(filename);
         }
         testFile.close();
     }
 
-    if (availableFiles.empty()) {
+    if (availableFiles.empty())
+    {
         cout << "No hay partidas guardadas disponibles.\n";
         return;
     }
@@ -492,34 +526,41 @@ void load_game(vector<vector<int>> &bombXY)
     int selected;
     cin >> selected;
 
-    if (selected < 1 || selected > availableFiles.size()) {
+    if (selected < 1 || selected > availableFiles.size())
+    {
         cout << "Opción inválida.\n";
         return;
     }
 
-    string selectedFile = availableFiles[selected-1];
+    string selectedFile = availableFiles[selected - 1];
     ifstream archivo(selectedFile);
-    
-    if (!archivo) {
+
+    if (!archivo)
+    {
         cout << "Error al abrir el archivo.\n";
         return;
     }
 
     reset_game_state(bombXY);
 
-    if (!(archivo >> difficulty.maxRows >> difficulty.maxColumns >> difficulty.maxBombs)) {
+    if (!(archivo >> difficulty.maxRows >> difficulty.maxColumns >> difficulty.maxBombs))
+    {
         cout << "Error leyendo configuración de dificultad.\n";
         return;
     }
 
-    auto loadCoordinates = [&archivo](vector<vector<int>>& vec) {
+    auto loadCoordinates = [&archivo](vector<vector<int>> &vec)
+    {
         int count;
-        if (!(archivo >> count)) return false;
-        
+        if (!(archivo >> count))
+            return false;
+
         vec.resize(count);
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++)
+        {
             int x, y;
-            if (!(archivo >> x >> y)) return false;
+            if (!(archivo >> x >> y))
+                return false;
             vec[i] = {x, y};
         }
         return true;
@@ -528,7 +569,8 @@ void load_game(vector<vector<int>> &bombXY)
     if (!loadCoordinates(bombXY) ||
         !loadCoordinates(game_data.repeat) ||
         !loadCoordinates(game_data.bomb_explote) ||
-        !loadCoordinates(game_data.treasureXY)) {
+        !loadCoordinates(game_data.treasureXY))
+    {
         cout << "Error leyendo datos de partida.\n";
         reset_game_state(bombXY);
         return;
@@ -638,7 +680,8 @@ int game_menu()
 Seleccione una opción: )";
         cin >> opcion;
 
-        if (cin.fail()) {
+        if (cin.fail())
+        {
             cin.clear();
             cin.ignore(10000, '\n');
             cout << "Entrada inválida. Por favor ingrese un número.\n";
@@ -882,18 +925,20 @@ void shield_protection(int &turn, bool &lose)
 void player_action(int &turn, bool &lose)
 {
     int action;
-    while (true) {
+    while (true)
+    {
         cout << "¿Qué desea hacer?\n";
         cout << "1. Excavar\n";
         cout << "2. Protegerse (Escudos: " << players[turn].shields << ")\n";
         cout << "3. Disparar con pistola (Balas: " << players[turn].bullets << ")\n";
         cout << "Opción: ";
         cin >> action;
-        
-        if (action >= 1 && action <= 3) break;
+
+        if (action >= 1 && action <= 3)
+            break;
         cout << "Opción inválida. Intente nuevamente.\n";
     }
-    
+
     switch (action)
     {
     case 1: // Excavar
