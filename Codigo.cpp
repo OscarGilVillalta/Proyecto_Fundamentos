@@ -127,8 +127,9 @@ void game_multiplayer(vector<vector<int>> &bombXY);
 void reset_game_state(vector<vector<int>> &bombXY);
 void pistol_shot(int &turn, bool &lose);
 void shield_protection(int &turn, bool &lose);
-void player_action(int &turn, bool &lose);
+void player_action(int &turn, bool &lose, vector<vector<int>> &bombXY);
 void player_configuration();
+bool show_post_save_menu();
 
 int main()
 {
@@ -138,6 +139,7 @@ int main()
     return 0;
 }
 
+// Función para mostrar sprites del juego
 string sprite(string typeSprite)
 {
     if (typeSprite == "Title")
@@ -265,6 +267,7 @@ string sprite(string typeSprite)
     return "";
 }
 
+// Función para configurar la dificultad del juego
 void menu_difficulty(int dif)
 {
     switch (dif)
@@ -295,6 +298,7 @@ void menu_difficulty(int dif)
     }
 }
 
+// Función para generar coordenadas aleatorias de bombas
 vector<vector<int>> random_coordinates()
 {
     vector<vector<int>> bombXY;
@@ -314,6 +318,7 @@ vector<vector<int>> random_coordinates()
     return bombXY;
 }
 
+// Función para verificar coordenadas ingresadas
 bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> &bombXY)
 {
     if ((coordinate[0] <= 0 || coordinate[0] > difficulty.maxColumns) ||
@@ -343,6 +348,7 @@ bool prove_coordinates(const vector<int> &coordinate, const vector<vector<int>> 
     return false;
 }
 
+// Función para mostrar mensaje de fin de juego
 void game_over_message()
 {
     if (error_type.bombExplote)
@@ -364,45 +370,62 @@ void game_over_message()
     }
 }
 
+// Función para mostrar la pantalla de victoria
 bool victory(int points, int playerIndex)
 {
     sprite("Winner");
 
+    // Crear vector de pares (puntos, nombre) para ordenar
     vector<pair<int, string>> rankings;
-    for (int i = 0; i < game_data.max_players; i++)
-    {
+    for (int i = 0; i < game_data.max_players; i++) {
         rankings.emplace_back(players[i].points, players[i].name);
     }
 
+    // Ordenar de mayor a menor
     sort(rankings.rbegin(), rankings.rend());
 
     cout << "\n=== TABLA DE POSICIONES ===\n";
-    for (size_t i = 0; i < rankings.size(); i++)
-    {
-        cout << i + 1 << ". " << rankings[i].second << ": " << rankings[i].first << " puntos\n";
+    for (size_t i = 0; i < rankings.size(); i++) {
+        cout << i+1 << ". " << rankings[i].second << ": " << rankings[i].first << " puntos\n";
     }
 
-    if (playerIndex >= 0)
-    {
+    if (playerIndex >= 0) {
+        // Mostrar mensaje personalizado para el ganador
         cout << "\n¡FELICIDADES " << players[playerIndex].name << " HAS GANADO!\n";
-    }
-    else
-    {
+    } else {
         cout << "\n¡HAS GANADO!\n";
     }
 
     cout << "Puntos finales: " << points << "\n";
     print_board();
 
+    // Preguntar si quiere jugar otra partida
+    cout << "\n¿Desea jugar otra partida? (1=Sí, 0=No): ";
+    int opcion;
+    cin >> opcion;
+    if (opcion == 1) {
+        vector<vector<int>> newBombXY;
+        reset_game_state(newBombXY);
+        game_menu();
+    }
+
     return true;
 }
 
+// Función para guardar la partida (VERSIÓN CORREGIDA)
 void save_game(const vector<vector<int>> &bombXY)
 {
+    // Crear directorio de guardado si no existe
+    #ifdef _WIN32
+        system("mkdir partidas_guardadas 2>nul");
+    #else
+        system("mkdir -p partidas_guardadas");
+    #endif
+
     vector<string> existingFiles;
     for (int i = 1; i <= 3; i++)
     {
-        string filename = "partida" + to_string(i) + ".txt";
+        string filename = "partidas_guardadas/partida" + to_string(i) + ".txt";
         ifstream testFile(filename);
         if (testFile.good())
         {
@@ -411,6 +434,7 @@ void save_game(const vector<vector<int>> &bombXY)
         testFile.close();
     }
 
+    string filename;
     if (existingFiles.size() >= 3)
     {
         cout << "\n¡Límite de 3 partidas guardadas alcanzado!\n";
@@ -443,94 +467,73 @@ void save_game(const vector<vector<int>> &bombXY)
             return;
         }
 
-        string filename = "partida" + to_string(seleccion) + ".txt";
-        ofstream archivo(filename);
-        if (!archivo)
+        filename = "partidas_guardadas/partida" + to_string(seleccion) + ".txt";
+    }
+    else
+    {
+        // Buscar el primer slot disponible
+        for (int i = 1; i <= 3; i++)
         {
-            cout << "No se pudo guardar la partida.\n";
-            return;
+            filename = "partidas_guardadas/partida" + to_string(i) + ".txt";
+            ifstream testFile(filename);
+            if (!testFile.good())
+            {
+                testFile.close();
+                break;
+            }
+            testFile.close();
         }
+    }
 
-        save_players_data(archivo);
-
-        archivo << bombXY.size() << "\n";
-        for (const vector<int> &coordinates : bombXY)
-        {
-            archivo << coordinates[0] << " " << coordinates[1] << "\n";
-        }
-
-        archivo << game_data.repeat.size() << "\n";
-        for (const vector<int> &coordinates : game_data.repeat)
-        {
-            archivo << coordinates[0] << " " << coordinates[1] << "\n";
-        }
-
-        archivo << game_data.bomb_explote.size() << "\n";
-        for (const vector<int> &coordinates : game_data.bomb_explote)
-        {
-            archivo << coordinates[0] << " " << coordinates[1] << "\n";
-        }
-
-        archivo << game_data.treasureXY.size() << "\n";
-        for (const vector<int> &coordinates : game_data.treasureXY)
-        {
-            archivo << coordinates[0] << " " << coordinates[1] << "\n";
-        }
-
-        archivo.close();
-        cout << "Partida guardada correctamente como " << filename << ".\n";
+    ofstream archivo(filename);
+    if (!archivo)
+    {
+        cout << "Error: No se pudo crear el archivo de guardado.\n";
+        cout << "Asegúrese de tener permisos de escritura en el directorio.\n";
         return;
     }
 
-    for (int i = 1; i <= 3; i++)
+    // Guardar datos de dificultad y jugadores
+    save_players_data(archivo);
+
+    // Guardar coordenadas de bombas
+    archivo << bombXY.size() << "\n";
+    for (const auto &coord : bombXY)
     {
-        string filename = "partida" + to_string(i) + ".txt";
-        ifstream testFile(filename);
-        if (!testFile.good())
-        {
-            testFile.close();
+        archivo << coord[0] << " " << coord[1] << "\n";
+    }
 
-            ofstream archivo(filename);
-            if (!archivo)
-            {
-                cout << "No se pudo guardar la partida.\n";
-                return;
-            }
+    // Guardar coordenadas repetidas
+    archivo << game_data.repeat.size() << "\n";
+    for (const auto &coord : game_data.repeat)
+    {
+        archivo << coord[0] << " " << coord[1] << "\n";
+    }
 
-            save_players_data(archivo);
+    // Guardar bombas explotadas
+    archivo << game_data.bomb_explote.size() << "\n";
+    for (const auto &coord : game_data.bomb_explote)
+    {
+        archivo << coord[0] << " " << coord[1] << "\n";
+    }
 
-            archivo << bombXY.size() << "\n";
-            for (const vector<int> &coordinates : bombXY)
-            {
-                archivo << coordinates[0] << " " << coordinates[1] << "\n";
-            }
+    // Guardar tesoros encontrados
+    archivo << game_data.treasureXY.size() << "\n";
+    for (const auto &coord : game_data.treasureXY)
+    {
+        archivo << coord[0] << " " << coord[1] << "\n";
+    }
 
-            archivo << game_data.repeat.size() << "\n";
-            for (const vector<int> &coordinates : game_data.repeat)
-            {
-                archivo << coordinates[0] << " " << coordinates[1] << "\n";
-            }
+    archivo.close();
+    cout << "\nPartida guardada correctamente en: " << filename << "\n";
 
-            archivo << game_data.bomb_explote.size() << "\n";
-            for (const vector<int> &coordinates : game_data.bomb_explote)
-            {
-                archivo << coordinates[0] << " " << coordinates[1] << "\n";
-            }
-
-            archivo << game_data.treasureXY.size() << "\n";
-            for (const vector<int> &coordinates : game_data.treasureXY)
-            {
-                archivo << coordinates[0] << " " << coordinates[1] << "\n";
-            }
-
-            archivo.close();
-            cout << "Partida guardada correctamente como " << filename << ".\n";
-            return;
-        }
-        testFile.close();
+    // Mostrar menú post-guardado
+    if (show_post_save_menu()) {
+        exit(0);
     }
 }
 
+// Función para cargar una partida guardada
 void load_game(vector<vector<int>> &bombXY)
 {
     cout << "\n=== PARTIDAS GUARDADAS ===\n";
@@ -538,7 +541,7 @@ void load_game(vector<vector<int>> &bombXY)
 
     for (int i = 1; i <= 3; i++)
     {
-        string filename = "partida" + to_string(i) + ".txt";
+        string filename = "partidas_guardadas/partida" + to_string(i) + ".txt";
         ifstream testFile(filename);
         if (testFile.good())
         {
@@ -611,6 +614,7 @@ void load_game(vector<vector<int>> &bombXY)
     game_multiplayer(bombXY);
 }
 
+// Función para imprimir el tablero de juego
 void print_board()
 {
     bool bomb_coordinate, treasure_coordinate;
@@ -680,6 +684,7 @@ void print_board()
     cout << "Leyenda: # = Sin explorar, $ = Tesoro, ! = Bomba, . = Explorado\n";
 }
 
+// Función para mostrar el menú principal del juego
 int game_menu()
 {
     int opcion;
@@ -688,15 +693,13 @@ int game_menu()
     while (true)
     {
         cout << R"( 
-╔══════════════════════════════════════════════╗
-║         ███ ENCUENTRA EL TESORO ███          ║
-║──────────────────────────────────────────────║
-║  1. Jugar modo Solitario                     ║
-║  2. Jugar modo Multijugador                  ║
-║  3. Cargar partida                           ║
-║  4. Guardar partida                          ║
-║  5. Salir del juego                          ║
-╚══════════════════════════════════════════════╝
+   --------------------------------------------
+ |        ENCUENTRA EL TESORO                  |
+ |---------------------------------------------|
+ | 1. Jugar modo Solitario                     |
+ | 2. Jugar modo Multijugador                  |
+ | 3. Salir del juego                          |
+   -------------------------------------------- 
 Seleccione una opción: )";
         cin >> opcion;
 
@@ -754,17 +757,8 @@ Seleccione una opción: )";
         }
         else if (opcion == 3)
         {
-            load_game(bombXY);
-            print_board();
-        }
-        else if (opcion == 4)
-        {
-            save_game(bombXY);
-        }
-        else if (opcion == 5)
-        {
             cout << "¡Gracias por jugar! Hasta la próxima.\n";
-            break;
+            exit(0);
         }
         else
         {
@@ -775,6 +769,7 @@ Seleccione una opción: )";
     return 0;
 }
 
+// Función para el modo multijugador
 void game_multiplayer(vector<vector<int>> &bombXY)
 {
     bool lose = false;
@@ -802,7 +797,7 @@ void game_multiplayer(vector<vector<int>> &bombXY)
                 lose = prove_coordinates(coordinate, bombXY);
                 game_data.repeat.push_back(coordinate);
 
-                player_action(turn, lose);
+                player_action(turn, lose, bombXY);
 
                 if (lose)
                 {
@@ -856,18 +851,13 @@ void game_multiplayer(vector<vector<int>> &bombXY)
         }
     }
 
-    cout << "\n=== FIN DEL JUEGO ===\n";
-    for (int i = 0; i < game_data.max_players; i++)
-    {
-        cout << players[i].name << ": " << players[i].points << " puntos\n";
-    }
-
     if (winnerIndex != -1)
     {
         victory(players[winnerIndex].points, winnerIndex);
     }
 }
 
+// Función para configurar los jugadores
 void player_configuration()
 {
     for (int i = 0; i < game_data.max_players; i++)
@@ -884,6 +874,7 @@ void player_configuration()
     }
 }
 
+// Función para reiniciar el estado del juego
 void reset_game_state(vector<vector<int>> &bombXY)
 {
     game_data.reset();
@@ -905,6 +896,7 @@ void reset_game_state(vector<vector<int>> &bombXY)
     difficulty.reset();
 }
 
+// Función para manejar el disparo con pistola
 void pistol_shot(int &turn, bool &lose)
 {
     if (players[turn].bullets == 0)
@@ -927,6 +919,7 @@ void pistol_shot(int &turn, bool &lose)
     lose = false;
 }
 
+// Función para manejar la protección con escudo
 void shield_protection(int &turn, bool &lose)
 {
     if (players[turn].shields == 0)
@@ -950,7 +943,8 @@ void shield_protection(int &turn, bool &lose)
     }
 }
 
-void player_action(int &turn, bool &lose)
+// Función para manejar las acciones del jugador
+void player_action(int &turn, bool &lose, vector<vector<int>> &bombXY)
 {
     int action;
     while (true)
@@ -959,10 +953,12 @@ void player_action(int &turn, bool &lose)
         cout << "1. Excavar\n";
         cout << "2. Protegerse (Escudos: " << players[turn].shields << ")\n";
         cout << "3. Disparar con pistola (Balas: " << players[turn].bullets << ")\n";
+        cout << "4. Guardar partida y salir\n";
+        cout << "5. Cargar partida guardada\n";
         cout << "Opción: ";
         cin >> action;
 
-        if (action >= 1 && action <= 3)
+        if (action >= 1 && action <= 5)
             break;
         cout << "Opción inválida. Intente nuevamente.\n";
     }
@@ -987,5 +983,48 @@ void player_action(int &turn, bool &lose)
         players[turn].action_protect = false;
         pistol_shot(turn, lose);
         break;
+    case 4: // Guardar partida y salir
+        save_game(bombXY);
+        return;
+    case 5: // Cargar partida guardada
+        load_game(bombXY);
+        return;
+    }
+}
+
+// Función para mostrar el menú después de guardar
+bool show_post_save_menu()
+{
+    system("cls");
+    while (true)
+    {
+        cout << "\n╔══════════════════════════════╗\n";
+        cout << "║    PARTIDA GUARDADA         ║\n";
+        cout << "╠══════════════════════════════╣\n";
+        cout << "║ 1. Iniciar nueva partida    ║\n";
+        cout << "║ 2. Cargar partida guardada  ║\n";
+        cout << "║ 3. Salir del juego          ║\n";
+        cout << "╚══════════════════════════════╝\n";
+        cout << "Seleccione una opción: ";
+        
+        int opcion;
+        cin >> opcion;
+
+        vector<vector<int>> bombXY;
+
+        switch (opcion)
+        {
+        case 1:
+            reset_game_state(bombXY);
+            game_menu();
+            return false;
+        case 2:
+            load_game(bombXY);
+            return false;
+        case 3:
+            return true;
+        default:
+            cout << "Opción no válida. Intente de nuevo.\n";
+        }
     }
 }
